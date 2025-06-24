@@ -164,6 +164,17 @@ async def reports(
     types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL ORDER BY type")
     types_list = db.execute(types_list_query).fetchall()
     
+    # Получаем историю операций с фильтрацией и пагинацией
+    operations_query = text(f'''
+        SELECT id, description, price, data, type
+        FROM budget 
+        WHERE {where_clause}
+        ORDER BY data DESC, id DESC
+        LIMIT 100
+    ''')
+    
+    operations_history = db.execute(operations_query).fetchall()
+    
     return templates.TemplateResponse("reports.html", {
         "request": request,
         "user": current_user,
@@ -171,6 +182,7 @@ async def reports(
         "monthly_results": monthly_results,
         "contributors_results": contributors_results,
         "types_results": types_results,
+        "operations_history": operations_history,
         "contributors_list": contributors_list,
         "types_list": types_list,
         "filters": {
