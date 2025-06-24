@@ -45,7 +45,8 @@ async def admin_budget(request: Request, admin_user: User = Depends(get_admin_us
 async def admin_add_budget_page(request: Request, admin_user: User = Depends(get_admin_user)):
     return templates.TemplateResponse("admin/add_budget.html", {
         "request": request,
-        "user": admin_user
+        "user": admin_user,
+        "today": date.today().strftime('%Y-%m-%d')
     })
 
 @router.post("/admin/budget/add")
@@ -53,16 +54,16 @@ async def admin_add_budget(
     request: Request,
     description: str = Form(...),
     price: float = Form(...),
-    budget_date: date = Form(...),
-    budget_type: str = Form(...),
+    data: date = Form(...),
+    type: str = Form(...),
     admin_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
     budget_entry = Budget(
         description=description,
         price=price,
-        data=budget_date,
-        type=budget_type
+        data=data,
+        type=type
     )
     
     db.add(budget_entry)
@@ -72,14 +73,14 @@ async def admin_add_budget(
 
 @router.get("/admin/budget/edit/{budget_id}", response_class=HTMLResponse)
 async def admin_edit_budget_page(budget_id: int, request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    budget_entry = db.query(Budget).filter(Budget.id == budget_id).first()
-    if not budget_entry:
+    entry = db.query(Budget).filter(Budget.id == budget_id).first()
+    if not entry:
         raise HTTPException(status_code=404, detail="Budget entry not found")
     
     return templates.TemplateResponse("admin/edit_budget.html", {
         "request": request,
         "user": admin_user,
-        "budget_entry": budget_entry
+        "entry": entry
     })
 
 @router.post("/admin/budget/edit/{budget_id}")
@@ -88,8 +89,8 @@ async def admin_edit_budget(
     request: Request,
     description: str = Form(...),
     price: float = Form(...),
-    budget_date: date = Form(...),
-    budget_type: str = Form(...),
+    data: date = Form(...),
+    type: str = Form(...),
     admin_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -99,8 +100,8 @@ async def admin_edit_budget(
     
     budget_entry.description = description
     budget_entry.price = price
-    budget_entry.data = budget_date
-    budget_entry.type = budget_type
+    budget_entry.data = data
+    budget_entry.type = type
     
     db.commit()
     
@@ -131,7 +132,7 @@ async def admin_users(request: Request, admin_user: User = Depends(get_admin_use
 async def admin_inventory(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     # Получаем данные инвентаря
     inventory_query = text('''
-        SELECT owner, COUNT(*) as item_count, STRING_AGG(item_name, ', ') as items
+        SELECT owner, COUNT(*) as item_count, ARRAY_TO_STRING(ARRAY_AGG(item_name), ', ') as items
         FROM inventory 
         GROUP BY owner
         ORDER BY owner

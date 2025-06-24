@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Управление инвентарем - Админ панель{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="border-b border-gray-200 pb-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-box mr-3 text-purple-600"></i>
+                    Управление инвентарем
+                </h1>
+                <p class="mt-2 text-sm text-gray-600">
+                    Просмотр имущества участников клуба исторической реконструкции.
+                </p>
+            </div>
+            <a href="/admin" 
+               class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Назад к панели
+            </a>
+        </div>
+    </div>
+
+    {% if inventory_summary %}
+    <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Владелец
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Количество предметов
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Предметы
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in inventory_summary %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-8 w-8">
+                                        <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                            <i class="fas fa-user text-purple-600 text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ item.owner }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    {{ item.item_count }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                                <div class="truncate" title="{{ item.items }}">
+                                    {{ item.items }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-purple-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500">Участников с инвентарем</dt>
+                    <dd class="text-2xl font-semibold text-gray-900">{{ inventory_summary|length }}</dd>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-box text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500">Всего предметов</dt>
+                    <dd class="text-2xl font-semibold text-gray-900">
+                        {{ inventory_summary|sum(attribute='item_count') }}
+                    </dd>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-crown text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500">Лидер по предметам</dt>
+                    <dd class="text-lg font-semibold text-gray-900">
+                        {% if inventory_summary %}
+                        {% set leader = inventory_summary|sort(attribute='item_count', reverse=true)|first %}
+                        {{ leader.owner }} ({{ leader.item_count }})
+                        {% else %}
+                        -
+                        {% endif %}
+                    </dd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">
+                    Информация об инвентаре
+                </h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>Данные инвентаря импортированы из файла database_Valravn.sql и показывают имущество участников клуба исторической реконструкции. Включает предметы одежды, оружие, украшения и другие артефакты.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+        <div class="text-center py-12">
+            <i class="fas fa-box text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Нет данных инвентаря</h3>
+            <p class="text-gray-500 mb-4">Пока что нет записей об имуществе участников.</p>
+            <div class="text-sm text-gray-500">
+                Для добавления данных инвентаря выполните импорт из файла database_Valravn.sql в базу данных.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

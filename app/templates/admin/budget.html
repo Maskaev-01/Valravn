@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Управление бюджетом - Админ панель{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="border-b border-gray-200 pb-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-money-bill mr-3 text-green-600"></i>
+                    Управление бюджетом
+                </h1>
+                <p class="mt-2 text-sm text-gray-600">
+                    Просмотр и редактирование всех записей бюджета.
+                </p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="/admin/budget/add" 
+                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Добавить запись
+                </a>
+                <a href="/admin" 
+                   class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Назад к панели
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if budget_entries %}
+    <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ID
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Описание
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Сумма
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Тип
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Дата
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Действия
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for entry in budget_entries %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                #{{ entry.id }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ entry.description }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold 
+                                {% if entry.price > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                {% if entry.price > 0 %}+{% endif %}{{ "{:,.0f}".format(entry.price) }} ₽
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if entry.type == 'Взнос' %}bg-green-100 text-green-800
+                                    {% elif entry.type == 'Траты' %}bg-red-100 text-red-800
+                                    {% elif entry.type == 'Долг' %}bg-orange-100 text-orange-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ entry.type }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ entry.data.strftime('%d.%m.%Y') if entry.data else '' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <a href="/admin/budget/edit/{{ entry.id }}" 
+                                   class="text-valravn-600 hover:text-valravn-900 transition-colors">
+                                    <i class="fas fa-edit"></i> Изменить
+                                </a>
+                                <form method="post" action="/admin/budget/delete/{{ entry.id }}" 
+                                      class="inline" 
+                                      onsubmit="return confirm('Вы уверены, что хотите удалить эту запись?')">
+                                    <button type="submit" 
+                                            class="text-red-600 hover:text-red-900 transition-colors ml-3">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+        <div class="text-center py-12">
+            <i class="fas fa-money-bill text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Нет записей</h3>
+            <p class="text-gray-500 mb-6">Пока что нет записей в бюджете.</p>
+            <a href="/admin/budget/add" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors">
+                <i class="fas fa-plus mr-2"></i>
+                Добавить первую запись
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
