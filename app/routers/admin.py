@@ -1,0 +1,146 @@
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from datetime import date
+from app.database import get_db
+from app.models.models import Budget, User, Inventory
+from app.auth import get_admin_user
+
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
+@router.get("/admin", response_class=HTMLResponse)
+async def admin_dashboard(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    # Статистика пользователей
+    users_count = db.query(User).count()
+    budget_entries_count = db.query(Budget).count()
+    inventory_count = db.query(Inventory).count()
+    
+    # Последние записи
+    recent_budget = db.query(Budget).order_by(Budget.id.desc()).limit(5).all()
+    
+    return templates.TemplateResponse("admin/dashboard.html", {
+        "request": request,
+        "user": admin_user,
+        "users_count": users_count,
+        "budget_entries_count": budget_entries_count,
+        "inventory_count": inventory_count,
+        "recent_budget": recent_budget
+    })
+
+@router.get("/admin/budget", response_class=HTMLResponse)
+async def admin_budget(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    # Получаем все записи бюджета с пагинацией
+    budget_entries = db.query(Budget).order_by(Budget.data.desc()).limit(100).all()
+    
+    return templates.TemplateResponse("admin/budget.html", {
+        "request": request,
+        "user": admin_user,
+        "budget_entries": budget_entries
+    })
+
+@router.get("/admin/budget/add", response_class=HTMLResponse)
+async def admin_add_budget_page(request: Request, admin_user: User = Depends(get_admin_user)):
+    return templates.TemplateResponse("admin/add_budget.html", {
+        "request": request,
+        "user": admin_user
+    })
+
+@router.post("/admin/budget/add")
+async def admin_add_budget(
+    request: Request,
+    description: str = Form(...),
+    price: float = Form(...),
+    budget_date: date = Form(...),
+    budget_type: str = Form(...),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    budget_entry = Budget(
+        description=description,
+        price=price,
+        data=budget_date,
+        type=budget_type
+    )
+    
+    db.add(budget_entry)
+    db.commit()
+    
+    return RedirectResponse(url="/admin/budget", status_code=302)
+
+@router.get("/admin/budget/edit/{budget_id}", response_class=HTMLResponse)
+async def admin_edit_budget_page(budget_id: int, request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    budget_entry = db.query(Budget).filter(Budget.id == budget_id).first()
+    if not budget_entry:
+        raise HTTPException(status_code=404, detail="Budget entry not found")
+    
+    return templates.TemplateResponse("admin/edit_budget.html", {
+        "request": request,
+        "user": admin_user,
+        "budget_entry": budget_entry
+    })
+
+@router.post("/admin/budget/edit/{budget_id}")
+async def admin_edit_budget(
+    budget_id: int,
+    request: Request,
+    description: str = Form(...),
+    price: float = Form(...),
+    budget_date: date = Form(...),
+    budget_type: str = Form(...),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    budget_entry = db.query(Budget).filter(Budget.id == budget_id).first()
+    if not budget_entry:
+        raise HTTPException(status_code=404, detail="Budget entry not found")
+    
+    budget_entry.description = description
+    budget_entry.price = price
+    budget_entry.data = budget_date
+    budget_entry.type = budget_type
+    
+    db.commit()
+    
+    return RedirectResponse(url="/admin/budget", status_code=302)
+
+@router.post("/admin/budget/delete/{budget_id}")
+async def admin_delete_budget(budget_id: int, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    budget_entry = db.query(Budget).filter(Budget.id == budget_id).first()
+    if not budget_entry:
+        raise HTTPException(status_code=404, detail="Budget entry not found")
+    
+    db.delete(budget_entry)
+    db.commit()
+    
+    return RedirectResponse(url="/admin/budget", status_code=302)
+
+@router.get("/admin/users", response_class=HTMLResponse)
+async def admin_users(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    
+    return templates.TemplateResponse("admin/users.html", {
+        "request": request,
+        "user": admin_user,
+        "users": users
+    })
+
+@router.get("/admin/inventory", response_class=HTMLResponse)
+async def admin_inventory(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    # Получаем данные инвентаря
+    inventory_query = text('''
+        SELECT owner, COUNT(*) as item_count, STRING_AGG(item_name, ', ') as items
+        FROM inventory 
+        GROUP BY owner
+        ORDER BY owner
+    ''')
+    
+    inventory_summary = db.execute(inventory_query).fetchall()
+    
+    return templates.TemplateResponse("admin/inventory.html", {
+        "request": request,
+        "user": admin_user,
+        "inventory_summary": inventory_summary
+    }) 

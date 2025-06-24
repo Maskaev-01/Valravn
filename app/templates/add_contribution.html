@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить взнос - Valravn{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="border-b border-gray-200 pb-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-plus-circle mr-3 text-valravn-600"></i>
+                    Добавить взнос
+                </h1>
+                <p class="mt-2 text-sm text-gray-600">
+                    Внесите информацию о новом взносе в общий фонд клуба.
+                </p>
+            </div>
+            <a href="/dashboard" class="text-sm text-gray-500 hover:text-gray-700 font-medium">
+                <i class="fas fa-arrow-left mr-1"></i>Назад к панели
+            </a>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+            <div class="p-6">
+                <form method="post" action="/add-contribution" class="space-y-6">
+                    <!-- Name Field -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-user mr-2 text-gray-400"></i>
+                            Имя участника
+                        </label>
+                        <input type="text" 
+                               id="description" 
+                               name="description" 
+                               required
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 sm:text-sm"
+                               placeholder="Введите имя участника">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Укажите имя человека, который вносит взнос
+                        </p>
+                    </div>
+
+                    <!-- Amount Field -->
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-ruble-sign mr-2 text-gray-400"></i>
+                            Сумма взноса
+                        </label>
+                        <div class="relative">
+                            <input type="number" 
+                                   id="price" 
+                                   name="price" 
+                                   step="0.01"
+                                   min="0"
+                                   required
+                                   class="block w-full px-3 py-2 pr-12 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 sm:text-sm"
+                                   placeholder="1000.00">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">₽</span>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Введите сумму взноса в рублях
+                        </p>
+                    </div>
+
+                    <!-- Date Field -->
+                    <div>
+                        <label for="contribution_date" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                            Дата взноса
+                        </label>
+                        <input type="date" 
+                               id="contribution_date" 
+                               name="contribution_date" 
+                               required
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 sm:text-sm">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Выберите дату, когда был внесен взнос
+                        </p>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-blue-800">
+                                    Информация о взносах
+                                </h3>
+                                <div class="mt-2 text-sm text-blue-700">
+                                    <ul class="list-disc pl-5 space-y-1">
+                                        <li>Все взносы автоматически помечаются как тип "Взнос"</li>
+                                        <li>Информация будет доступна в отчетах и статистике</li>
+                                        <li>При необходимости админ может отредактировать запись</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between pt-4">
+                        <a href="/dashboard" 
+                           class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-times mr-2"></i>
+                            Отмена
+                        </a>
+                        <button type="submit" 
+                                class="bg-valravn-600 hover:bg-valravn-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-valravn-500">
+                            <i class="fas fa-save mr-2"></i>
+                            Сохранить взнос
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Add Suggestions -->
+        <div class="mt-6 bg-white shadow-lg rounded-lg border border-gray-200">
+            <div class="p-4">
+                <h3 class="text-sm font-medium text-gray-900 mb-3">
+                    <i class="fas fa-lightning-bolt mr-2 text-yellow-500"></i>
+                    Быстрое заполнение
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button type="button" onclick="setAmount(500)" 
+                            class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-3 py-2 text-sm text-gray-700 transition-colors">
+                        500 ₽
+                    </button>
+                    <button type="button" onclick="setAmount(1000)" 
+                            class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-3 py-2 text-sm text-gray-700 transition-colors">
+                        1000 ₽
+                    </button>
+                    <button type="button" onclick="setAmount(1500)" 
+                            class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-3 py-2 text-sm text-gray-700 transition-colors">
+                        1500 ₽
+                    </button>
+                    <button type="button" onclick="setToday()" 
+                            class="bg-valravn-50 hover:bg-valravn-100 border border-valravn-200 rounded px-3 py-2 text-sm text-valravn-700 transition-colors">
+                        Сегодня
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setAmount(amount) {
+        document.getElementById('price').value = amount;
+    }
+    
+    function setToday() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('contribution_date').value = today;
+    }
+    
+    // Set today's date by default
+    document.addEventListener('DOMContentLoaded', function() {
+        setToday();
+    });
+</script>
+{% endblock %} 

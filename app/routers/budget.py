@@ -1,0 +1,133 @@
+from fastapi import APIRouter, Depends, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from datetime import date
+from app.database import get_db
+from app.models.models import Budget, User
+from app.models.schemas import BudgetCreate
+from app.auth import get_current_user, get_admin_user
+
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Получаем последние взносы
+    recent_contributions = db.query(Budget).filter(Budget.type == "Взнос").order_by(Budget.data.desc()).limit(10).all()
+    
+    # Получаем сводную информацию
+    total_income = db.query(Budget).filter(Budget.price > 0, Budget.type != "Погашение Долга").all()
+    total_expenses = db.query(Budget).filter(Budget.price < 0, Budget.type != "Долг").all()
+    
+    income_sum = sum([b.price for b in total_income]) if total_income else 0
+    expenses_sum = sum([b.price for b in total_expenses]) if total_expenses else 0
+    balance = income_sum + expenses_sum
+    
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "user": current_user,
+        "recent_contributions": recent_contributions,
+        "income_sum": income_sum,
+        "expenses_sum": abs(expenses_sum),
+        "balance": balance
+    })
+
+@router.get("/add-contribution", response_class=HTMLResponse)
+async def add_contribution_page(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse("add_contribution.html", {
+        "request": request,
+        "user": current_user
+    })
+
+@router.post("/add-contribution")
+async def add_contribution(
+    request: Request,
+    description: str = Form(...),
+    price: float = Form(...),
+    contribution_date: date = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Создаем новый взнос
+    budget_entry = Budget(
+        description=description,
+        price=price,
+        data=contribution_date,
+        type="Взнос"
+    )
+    
+    db.add(budget_entry)
+    db.commit()
+    
+    return RedirectResponse(url="/dashboard", status_code=302)
+
+@router.get("/reports", response_class=HTMLResponse)
+async def reports(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Получаем данные из view "Итог"
+    summary_query = text('''
+        SELECT 'Общий расход(за всё время)' as result_type, sum(price) as sum_value
+        FROM budget 
+        WHERE price < 0 AND type != 'Долг'
+        UNION ALL
+        SELECT 'Общий доход(за всё время)' as result_type, sum(price) as sum_value
+        FROM budget 
+        WHERE price > 0 AND type != 'Погашение Долга'
+        UNION ALL
+        SELECT 'Долг' as result_type, sum(price) as sum_value
+        FROM budget 
+        WHERE type IN ('Погашение Долга', 'Долг')
+        UNION ALL
+        SELECT 'Остаток фактический(на данный момент)' as result_type, sum(price) as sum_value
+        FROM budget 
+        WHERE (price < 0 AND type != 'Долг') OR (price > 0 AND type != 'Погашение Долга')
+    ''')
+    
+    summary_results = db.execute(summary_query).fetchall()
+    
+    # Получаем данные помесячно
+    monthly_query = text('''
+        SELECT 
+            DATE_PART('year', data) as year,
+            DATE_PART('month', data) as month,
+            SUM(CASE WHEN price > 0 AND type != 'Погашение Долга' THEN price ELSE 0 END) as income,
+            SUM(CASE WHEN price < 0 AND type != 'Долг' THEN price ELSE 0 END) as expenses,
+            SUM(price) as total
+        FROM budget 
+        GROUP BY DATE_PART('year', data), DATE_PART('month', data)
+        ORDER BY year DESC, month DESC
+        LIMIT 12
+    ''')
+    
+    monthly_results = db.execute(monthly_query).fetchall()
+    
+    return templates.TemplateResponse("reports.html", {
+        "request": request,
+        "user": current_user,
+        "summary_results": summary_results,
+        "monthly_results": monthly_results
+    })
+
+@router.get("/contributors", response_class=HTMLResponse)
+async def contributors(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Получаем сводную информацию по участникам
+    contributors_query = text('''
+        SELECT 
+            description,
+            COUNT(*) as contribution_count,
+            SUM(price) as total_amount,
+            MAX(data) as last_contribution
+        FROM budget 
+        WHERE type = 'Взнос'
+        GROUP BY description
+        ORDER BY total_amount DESC
+    ''')
+    
+    contributors_results = db.execute(contributors_query).fetchall()
+    
+    return templates.TemplateResponse("contributors.html", {
+        "request": request,
+        "user": current_user,
+        "contributors": contributors_results
+    }) 
