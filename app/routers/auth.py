@@ -58,7 +58,7 @@ async def register_user(
             "error": "Неверный секретный код"
         })
     
-    # Проверяем, существует ли пользователь
+    # Проверяем, существует ли пользователь с таким именем
     db_user = db.query(User).filter(User.username == username).first()
     if db_user:
         return templates.TemplateResponse("register.html", {
@@ -66,9 +66,21 @@ async def register_user(
             "error": "Пользователь с таким именем уже существует"
         })
     
+    # Преобразуем пустую строку email в None для корректной работы с unique constraint
+    email_value = email if email and email.strip() else None
+    
+    # Проверяем уникальность email, если он предоставлен
+    if email_value:
+        existing_email_user = db.query(User).filter(User.email == email_value).first()
+        if existing_email_user:
+            return templates.TemplateResponse("register.html", {
+                "request": request,
+                "error": "Пользователь с таким email уже существует"
+            })
+    
     # Создаем нового пользователя
     hashed_password = get_password_hash(password)
-    db_user = User(username=username, email=email, hashed_password=hashed_password)
+    db_user = User(username=username, email=email_value, hashed_password=hashed_password)
     
     # Первый пользователь становится админом
     users_count = db.query(User).count()

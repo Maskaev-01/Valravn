@@ -6,7 +6,7 @@ from sqlalchemy import text
 from datetime import date
 from app.database import get_db
 from app.models.models import Budget, User, Inventory
-from app.auth import get_admin_user
+from app.auth import get_admin_user, get_password_hash
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -144,4 +144,32 @@ async def admin_inventory(request: Request, admin_user: User = Depends(get_admin
         "request": request,
         "user": admin_user,
         "inventory_summary": inventory_summary
-    }) 
+    })
+
+@router.post("/admin/reset-password")
+async def admin_reset_password(
+    request: Request,
+    user_id: int = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    # Проверяем, что пароли совпадают
+    if new_password != confirm_password:
+        return RedirectResponse(url="/admin/users?error=passwords_mismatch", status_code=302)
+    
+    # Проверяем минимальную длину пароля
+    if len(new_password) < 4:
+        return RedirectResponse(url="/admin/users?error=password_too_short", status_code=302)
+    
+    # Находим пользователя
+    user_to_update = db.query(User).filter(User.id == user_id).first()
+    if not user_to_update:
+        return RedirectResponse(url="/admin/users?error=user_not_found", status_code=302)
+    
+    # Обновляем пароль
+    user_to_update.hashed_password = get_password_hash(new_password)
+    db.commit()
+    
+    return RedirectResponse(url="/admin/users?success=password_changed", status_code=302) 

@@ -22,6 +22,49 @@
         </div>
     </div>
 
+    <!-- Уведомления -->
+    {% set success = request.query_params.get('success') %}
+    {% set error = request.query_params.get('error') %}
+    
+    {% if success == 'password_changed' %}
+    <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-check-circle text-green-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-green-800">
+                    <strong>Успешно!</strong> Пароль пользователя изменен.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if error %}
+    <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-circle text-red-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-800">
+                    <strong>Ошибка!</strong>
+                    {% if error == 'passwords_mismatch' %}
+                        Пароли не совпадают.
+                    {% elif error == 'password_too_short' %}
+                        Пароль должен содержать минимум 4 символа.
+                    {% elif error == 'user_not_found' %}
+                        Пользователь не найден.
+                    {% else %}
+                        Произошла неизвестная ошибка.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if users %}
     <div class="bg-white shadow-lg rounded-lg border border-gray-200">
         <div class="p-6">
@@ -43,6 +86,9 @@
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Дата регистрации
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Действия
                             </th>
                         </tr>
                     </thead>
@@ -82,6 +128,12 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ user_item.created_at.strftime('%d.%m.%Y %H:%M') if user_item.created_at else '' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="openResetPasswordModal('{{ user_item.id }}', '{{ user_item.username }}')"
+                                        class="text-orange-600 hover:text-orange-900 transition-colors mr-3">
+                                    <i class="fas fa-key mr-1"></i>Сменить пароль
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -154,4 +206,100 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Modal для смены пароля -->
+<div id="resetPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">
+                    <i class="fas fa-key mr-2 text-orange-600"></i>
+                    Смена пароля
+                </h3>
+                <button onclick="closeResetPasswordModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-sm text-gray-600">
+                    Смена пароля для пользователя: <strong id="selectedUsername"></strong>
+                </p>
+            </div>
+            
+            <form id="resetPasswordForm" method="post" action="/admin/reset-password" class="space-y-4">
+                <input type="hidden" id="userId" name="user_id">
+                
+                <div>
+                    <label for="newPassword" class="block text-sm font-medium text-gray-700">
+                        Новый пароль
+                    </label>
+                    <input type="password" id="newPassword" name="new_password" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                           placeholder="Введите новый пароль">
+                </div>
+                
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">
+                        Подтвердите пароль
+                    </label>
+                    <input type="password" id="confirmPassword" name="confirm_password" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                           placeholder="Повторите пароль">
+                </div>
+                
+                <div class="flex items-center justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeResetPasswordModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Отмена
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                        <i class="fas fa-save mr-2"></i>Сменить пароль
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openResetPasswordModal(userId, username) {
+    document.getElementById('userId').value = userId;
+    document.getElementById('selectedUsername').textContent = username;
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('resetPasswordModal').classList.remove('hidden');
+}
+
+function closeResetPasswordModal() {
+    document.getElementById('resetPasswordModal').classList.add('hidden');
+}
+
+// Проверка совпадения паролей
+document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('Пароли не совпадают!');
+        return false;
+    }
+    
+    if (newPassword.length < 4) {
+        e.preventDefault();
+        alert('Пароль должен содержать минимум 4 символа');
+        return false;
+    }
+});
+
+// Закрытие модального окна при клике вне его
+document.getElementById('resetPasswordModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeResetPasswordModal();
+    }
+});
+</script>
+
 {% endblock %} 
