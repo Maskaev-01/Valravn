@@ -7,13 +7,13 @@ from datetime import date
 from app.database import get_db
 from app.models.models import Budget, User
 from app.models.schemas import BudgetCreate
-from app.auth import get_current_user, get_admin_user
+from app.auth import get_current_user_from_cookie, get_admin_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def dashboard(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     # Получаем последние взносы
     recent_contributions = db.query(Budget).filter(Budget.type == "Взнос").order_by(Budget.data.desc()).limit(10).all()
     
@@ -35,7 +35,7 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_u
     })
 
 @router.get("/add-contribution", response_class=HTMLResponse)
-async def add_contribution_page(request: Request, current_user: User = Depends(get_current_user)):
+async def add_contribution_page(request: Request, current_user: User = Depends(get_current_user_from_cookie)):
     return templates.TemplateResponse("add_contribution.html", {
         "request": request,
         "user": current_user
@@ -47,7 +47,7 @@ async def add_contribution(
     description: str = Form(...),
     price: float = Form(...),
     contribution_date: date = Form(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_cookie),
     db: Session = Depends(get_db)
 ):
     # Создаем новый взнос
@@ -64,7 +64,7 @@ async def add_contribution(
     return RedirectResponse(url="/dashboard", status_code=302)
 
 @router.get("/reports", response_class=HTMLResponse)
-async def reports(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def reports(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     # Получаем данные из view "Итог"
     summary_query = text('''
         SELECT 'Общий расход(за всё время)' as result_type, sum(price) as sum_value
@@ -110,7 +110,7 @@ async def reports(request: Request, current_user: User = Depends(get_current_use
     })
 
 @router.get("/contributors", response_class=HTMLResponse)
-async def contributors(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def contributors(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     # Получаем сводную информацию по участникам
     contributors_query = text('''
         SELECT 

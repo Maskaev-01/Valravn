@@ -9,7 +9,7 @@ from app.database import get_db, engine
 from app.models.models import User
 from app.models import models
 from app.routers import auth, budget, admin
-from app.auth import get_current_user
+from app.auth import get_current_user_from_cookie
 
 # Создаем таблицы
 models.Base.metadata.create_all(bind=engine)
@@ -34,34 +34,13 @@ app.include_router(auth.router)
 app.include_router(budget.router)
 app.include_router(admin.router)
 
-# Функция для получения пользователя из cookie
-async def get_user_from_cookie(request: Request, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token")
-    if not token:
-        return None
-    
-    if token.startswith("Bearer "):
-        token = token[7:]
-    
-    try:
-        from jose import jwt
-        from app.auth import SECRET_KEY, ALGORITHM
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-        
-        user = db.query(User).filter(User.username == username).first()
-        return user
-    except:
-        return None
-
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: Session = Depends(get_db)):
-    user = await get_user_from_cookie(request, db)
-    if user:
+    try:
+        user = await get_current_user_from_cookie(request, db)
         return RedirectResponse(url="/dashboard")
-    return RedirectResponse(url="/login")
+    except HTTPException:
+        return RedirectResponse(url="/login")
 
 @app.get("/health")
 async def health_check():
