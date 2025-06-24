@@ -6,8 +6,10 @@
     <title>{% block title %}Valravn - Управление Бюджетом{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/style.css') }}" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -18,6 +20,32 @@
                             700: '#0369a1',
                             800: '#075985',
                             900: '#0c4a6e',
+                        },
+                        'raven': {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                            950: '#451a03',
+                        },
+                        'raven-dark': {
+                            50: '#f5f1f1',
+                            100: '#e8dede',
+                            200: '#d4c2c2',
+                            300: '#b89999',
+                            400: '#9d6b6b',
+                            500: '#854a4a',
+                            600: '#722f37',
+                            700: '#5f2730',
+                            800: '#52242b',
+                            900: '#472327',
+                            950: '#261012',
                         }
                     }
                 }
@@ -25,36 +53,36 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
     <!-- Navigation -->
     {% if user %}
-    <nav class="bg-white shadow-lg border-b border-gray-200">
+    <nav class="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <h1 class="text-2xl font-bold text-valravn-700">
-                            <i class="fas fa-raven mr-2"></i>Valravn
+                        <h1 class="text-2xl font-bold text-valravn-700 dark:text-raven-400">
+                            <i class="fas fa-raven mr-2 text-raven-600 dark:text-raven-400"></i>Valravn
                         </h1>
                     </div>
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="/dashboard" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <a href="/dashboard" class="border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 hover:border-gray-300 dark:hover:border-raven-500 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
                             <i class="fas fa-chart-line mr-2"></i>Панель управления
                         </a>
-                        <a href="/add-contribution" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <a href="/add-contribution" class="border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 hover:border-gray-300 dark:hover:border-raven-500 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
                             <i class="fas fa-plus-circle mr-2"></i>Добавить взнос
                         </a>
-                        <a href="/reports" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <a href="/reports" class="border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 hover:border-gray-300 dark:hover:border-raven-500 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
                             <i class="fas fa-chart-bar mr-2"></i>Отчеты
                         </a>
-                        <a href="/contributors" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <a href="/contributors" class="border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 hover:border-gray-300 dark:hover:border-raven-500 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
                             <i class="fas fa-users mr-2"></i>Участники
                         </a>
-                        <a href="/inventory" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <a href="/inventory" class="border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 hover:border-gray-300 dark:hover:border-raven-500 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
                             <i class="fas fa-box mr-2"></i>Инвентарь
                         </a>
                         {% if user.is_admin %}
-                        <a href="/admin" class="border-transparent text-red-500 hover:text-red-700 hover:border-red-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <a href="/admin" class="border-transparent text-red-500 hover:text-red-700 dark:text-raven-400 dark:hover:text-raven-300 hover:border-red-300 dark:hover:border-raven-500 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
                             <i class="fas fa-cogs mr-2"></i>Админ
                         </a>
                         {% endif %}
@@ -63,11 +91,17 @@
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="flex items-center space-x-4">
-                            <span class="text-gray-700 text-sm">
+                            <!-- Theme Toggle -->
+                            <button onclick="toggleTheme()" 
+                                    class="theme-toggle bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 rounded-md text-sm font-medium transition-colors"
+                                    title="Переключить тему">
+                                <i id="theme-icon" class="fas fa-moon"></i>
+                            </button>
+                            <span class="text-gray-700 dark:text-gray-300 text-sm">
                                 <i class="fas fa-user mr-1"></i>{{ user.username }}
-                                {% if user.is_admin %}<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full ml-2">Админ</span>{% endif %}
+                                {% if user.is_admin %}<span class="bg-red-100 text-red-800 dark:bg-raven-800 dark:text-raven-200 text-xs px-2 py-1 rounded-full ml-2">Админ</span>{% endif %}
                             </span>
-                            <a href="/logout" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="/logout" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 <i class="fas fa-sign-out-alt mr-1"></i>Выход
                             </a>
                         </div>
@@ -79,23 +113,23 @@
         <!-- Mobile menu -->
         <div class="md:hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="/dashboard" class="text-gray-500 hover:text-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                <a href="/dashboard" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-chart-line mr-2"></i>Панель управления
                 </a>
-                <a href="/add-contribution" class="text-gray-500 hover:text-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                <a href="/add-contribution" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-plus-circle mr-2"></i>Добавить взнос
                 </a>
-                <a href="/reports" class="text-gray-500 hover:text-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                <a href="/reports" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-chart-bar mr-2"></i>Отчеты
                 </a>
-                <a href="/contributors" class="text-gray-500 hover:text-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                <a href="/contributors" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-users mr-2"></i>Участники
                 </a>
-                <a href="/inventory" class="text-gray-500 hover:text-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                <a href="/inventory" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-raven-300 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-box mr-2"></i>Инвентарь
                 </a>
                 {% if user.is_admin %}
-                <a href="/admin" class="text-red-500 hover:text-red-700 block px-3 py-2 rounded-md text-base font-medium">
+                <a href="/admin" class="text-red-500 hover:text-red-700 dark:text-raven-400 dark:hover:text-raven-300 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-cogs mr-2"></i>Админ
                 </a>
                 {% endif %}
@@ -110,9 +144,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-auto">
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <div class="text-center text-gray-500 text-sm">
+            <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
                 <p>&copy; 2024 Valravn Budget Management System. Разработано для клуба исторической реконструкции.</p>
             </div>
         </div>
@@ -151,6 +185,43 @@
                 }
             }, 5000);
         }
+
+        // Theme Toggle Functions
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Initialize theme on page load
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                html.classList.add('dark');
+                if (themeIcon) themeIcon.className = 'fas fa-sun';
+            } else {
+                html.classList.remove('dark');
+                if (themeIcon) themeIcon.className = 'fas fa-moon';
+            }
+        }
+
+        // Initialize theme immediately
+        initTheme();
+
+        // Re-initialize when page loads
+        document.addEventListener('DOMContentLoaded', initTheme);
     </script>
     
     {% block scripts %}{% endblock %}

@@ -1,1 +1,225 @@
- 
+/* Valravn Dark Theme Styles */
+
+/* Custom Dark Theme Variables */
+:root {
+  --raven-primary: #722f37;
+  --raven-secondary: #5f2730;
+  --raven-accent: #9d6b6b;
+  --raven-dark: #261012;
+  --raven-light: #b89999;
+}
+
+/* Dark mode background patterns */
+.dark {
+  background-color: #0f0f0f;
+}
+
+/* Custom scrollbar for dark theme */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f1f1f;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--raven-primary);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--raven-secondary);
+}
+
+/* Enhanced focus states for dark theme */
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  box-shadow: 0 0 0 2px var(--raven-primary);
+  border-color: var(--raven-primary);
+}
+
+/* Dark theme card styles */
+.dark .bg-white {
+  background-color: #1a1a1a !important;
+  border-color: #2d2d2d !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #161616 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f1f1f !important;
+}
+
+/* Button hover effects */
+.dark .hover\:bg-gray-200:hover {
+  background-color: #2d2d2d !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #262626 !important;
+}
+
+/* Raven theme specific buttons */
+.dark .bg-raven-600 {
+  background-color: var(--raven-primary);
+}
+
+.dark .hover\:bg-raven-700:hover {
+  background-color: var(--raven-secondary);
+}
+
+/* Table styling for dark theme */
+.dark table {
+  border-color: #2d2d2d;
+}
+
+.dark th {
+  background-color: #161616 !important;
+  color: #e5e5e5;
+}
+
+.dark td {
+  border-color: #2d2d2d;
+}
+
+.dark tr:hover {
+  background-color: #1a1a1a !important;
+}
+
+/* Form elements dark theme */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1a1a1a;
+  border-color: #404040;
+  color: #e5e5e5;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #888888;
+}
+
+/* Navigation active states */
+.dark .border-valravn-500 {
+  border-color: var(--raven-primary) !important;
+}
+
+.dark .text-valravn-600 {
+  color: var(--raven-accent) !important;
+}
+
+/* Alert and notification styles */
+.dark .bg-blue-50 {
+  background-color: #1a1a2e !important;
+}
+
+.dark .border-blue-200 {
+  border-color: #2d2d4d !important;
+}
+
+.dark .text-blue-800 {
+  color: #a8b8ff !important;
+}
+
+.dark .text-blue-700 {
+  color: #9ca8ff !important;
+}
+
+/* Success states */
+.dark .bg-green-50 {
+  background-color: #1a2e1a !important;
+}
+
+.dark .text-green-800 {
+  color: #a8ffa8 !important;
+}
+
+/* Error states */
+.dark .bg-red-50 {
+  background-color: #2e1a1a !important;
+}
+
+.dark .text-red-800 {
+  color: #ffa8a8 !important;
+}
+
+/* Warning states */
+.dark .bg-yellow-50 {
+  background-color: #2e2e1a !important;
+}
+
+.dark .border-yellow-200 {
+  border-color: #4d4d2d !important;
+}
+
+/* Purple theme for inventory */
+.dark .bg-purple-50 {
+  background-color: #2a1a2e !important;
+}
+
+.dark .border-purple-200 {
+  border-color: #4d2d4d !important;
+}
+
+.dark .text-purple-800 {
+  color: #dda8ff !important;
+}
+
+.dark .bg-purple-100 {
+  background-color: #351a3a !important;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease-in-out, 
+              border-color 0.2s ease-in-out, 
+              color 0.2s ease-in-out;
+}
+
+/* Theme toggle button specific styling */
+.theme-toggle {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.theme-toggle:hover::before {
+  left: 100%;
+}
+
+/* Raven logo styling */
+.dark .fas.fa-raven {
+  filter: drop-shadow(0 0 4px var(--raven-primary));
+}
+
+/* Custom select styling */
+.dark select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23888888' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Modal and overlay styles */
+.dark .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dark .md\:hidden {
+    background-color: #161616;
+  }
+} 
