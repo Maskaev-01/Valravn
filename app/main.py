@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, engine
 from app.models.models import User
 from app.models import models
-from app.routers import auth, budget, admin
+from app.routers import auth, budget, admin, inventory
 from app.auth import get_current_user_from_cookie
 
 # Создаем таблицы
@@ -33,6 +33,7 @@ templates = Jinja2Templates(directory="app/templates")
 app.include_router(auth.router)
 app.include_router(budget.router)
 app.include_router(admin.router)
+app.include_router(inventory.router)
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: Session = Depends(get_db)):

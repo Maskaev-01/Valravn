@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Сводка инвентаря - Valravn{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="border-b border-gray-200 pb-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-chart-pie mr-3 text-purple-600"></i>
+                    Сводка инвентаря
+                </h1>
+                <p class="mt-2 text-sm text-gray-600">
+                    Аналитика и статистика по имуществу участников клуба.
+                </p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="/inventory/add" 
+                   class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Добавить предмет
+                </a>
+                <a href="/inventory" 
+                   class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-list mr-2"></i>Список инвентаря
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white shadow-lg rounded-lg border border-gray-200 mb-8">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 px-6">
+                <button onclick="showTab('owners')" 
+                        id="owners-tab"
+                        class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-purple-500 text-purple-600">
+                    <i class="fas fa-users mr-2"></i>По владельцам
+                </button>
+                <button onclick="showTab('types')" 
+                        id="types-tab"
+                        class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="fas fa-layer-group mr-2"></i>По типам
+                </button>
+                <button onclick="showTab('materials')" 
+                        id="materials-tab"
+                        class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="fas fa-cube mr-2"></i>По материалам
+                </button>
+            </nav>
+        </div>
+
+        <!-- Owners Tab -->
+        <div id="owners-content" class="tab-content p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Инвентарь по владельцам</h3>
+            
+            {% if summary_results %}
+            <div class="space-y-4">
+                {% for owner_data in summary_results %}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-user text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">{{ owner_data.owner }}</h4>
+                                <p class="text-sm text-gray-500">{{ owner_data.item_count }} предметов</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <a href="/inventory?owner={{ owner_data.owner }}" 
+                               class="text-purple-600 hover:text-purple-900 text-sm font-medium">
+                                <i class="fas fa-search mr-1"></i>Посмотреть все
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-100 rounded-md p-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Предметы:</h5>
+                        <p class="text-sm text-gray-600 leading-relaxed">{{ owner_data.items }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Нет данных</h3>
+                <p class="text-gray-500">Пока что нет информации о владельцах инвентаря.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Types Tab -->
+        <div id="types-content" class="tab-content p-6 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Статистика по типам предметов</h3>
+            
+            {% if types_results %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for type_data in types_results %}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-900 capitalize">{{ type_data.item_type }}</h4>
+                            <p class="text-sm text-gray-500">{{ type_data.count }} предметов</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            {% if type_data.item_type == 'одежда' %}
+                                <i class="fas fa-tshirt text-blue-600"></i>
+                            {% elif type_data.item_type == 'оружие' %}
+                                <i class="fas fa-sword text-blue-600"></i>
+                            {% elif type_data.item_type == 'украшения' %}
+                                <i class="fas fa-gem text-blue-600"></i>
+                            {% elif type_data.item_type == 'аксессуары' %}
+                                <i class="fas fa-hand-sparkles text-blue-600"></i>
+                            {% elif type_data.item_type == 'обувь' %}
+                                <i class="fas fa-shoe-prints text-blue-600"></i>
+                            {% elif type_data.item_type == 'инструменты' %}
+                                <i class="fas fa-tools text-blue-600"></i>
+                            {% elif type_data.item_type == 'артефакты' %}
+                                <i class="fas fa-monument text-blue-600"></i>
+                            {% else %}
+                                <i class="fas fa-box text-blue-600"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="bg-white rounded-md p-3">
+                            <a href="/inventory?item_type={{ type_data.item_type }}" 
+                               class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                                <i class="fas fa-search mr-1"></i>Посмотреть предметы
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-layer-group text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Нет данных</h3>
+                <p class="text-gray-500">Пока что нет информации о типах предметов.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Materials Tab -->
+        <div id="materials-content" class="tab-content p-6 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Статистика по материалам</h3>
+            
+            {% if materials_results %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for material_data in materials_results %}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-900 capitalize">{{ material_data.material }}</h4>
+                            <p class="text-sm text-gray-500">{{ material_data.count }} предметов</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            {% if 'лён' in material_data.material.lower() or 'ткань' in material_data.material.lower() %}
+                                <i class="fas fa-leaf text-green-600"></i>
+                            {% elif 'железо' in material_data.material.lower() or 'металл' in material_data.material.lower() or 'сталь' in material_data.material.lower() %}
+                                <i class="fas fa-hammer text-green-600"></i>
+                            {% elif 'кожа' in material_data.material.lower() %}
+                                <i class="fas fa-paw text-green-600"></i>
+                            {% elif 'дерево' in material_data.material.lower() %}
+                                <i class="fas fa-tree text-green-600"></i>
+                            {% elif 'стекло' in material_data.material.lower() or 'янтарь' in material_data.material.lower() %}
+                                <i class="fas fa-gem text-green-600"></i>
+                            {% elif 'шерсть' in material_data.material.lower() %}
+                                <i class="fas fa-sheep text-green-600"></i>
+                            {% elif 'кость' in material_data.material.lower() %}
+                                <i class="fas fa-bone text-green-600"></i>
+                            {% else %}
+                                <i class="fas fa-cube text-green-600"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="bg-white rounded-md p-3">
+                            <a href="/inventory?search={{ material_data.material }}" 
+                               class="text-green-600 hover:text-green-900 text-sm font-medium">
+                                <i class="fas fa-search mr-1"></i>Посмотреть предметы
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-cube text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Нет данных</h3>
+                <p class="text-gray-500">Пока что нет информации о материалах.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-box text-purple-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500">Всего предметов</dt>
+                    <dd class="text-2xl font-semibold text-gray-900">
+                        {{ summary_results|sum(attribute='item_count') if summary_results else 0 }}
+                    </dd>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500">Участников с инвентарем</dt>
+                    <dd class="text-2xl font-semibold text-gray-900">
+                        {{ summary_results|length if summary_results else 0 }}
+                    </dd>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-layer-group text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500">Типов предметов</dt>
+                    <dd class="text-2xl font-semibold text-gray-900">
+                        {{ types_results|length if types_results else 0 }}
+                    </dd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Box -->
+    <div class="mt-8 bg-purple-50 border border-purple-200 rounded-md p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-purple-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-purple-800">
+                    О сводке инвентаря
+                </h3>
+                <div class="mt-2 text-sm text-purple-700">
+                    <p>Данные основаны на информации из базы данных инвентаря клуба исторической реконструкции. Включает предметы одежды, оружие, украшения, инструменты и артефакты различных исторических периодов.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Hide all tab contents
+    const contents = document.querySelectorAll('.tab-content');
+    contents.forEach(content => content.classList.add('hidden'));
+    
+    // Reset all tab buttons
+    const buttons = document.querySelectorAll('.tab-button');
+    buttons.forEach(button => {
+        button.classList.remove('border-purple-500', 'text-purple-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabName + '-content').classList.remove('hidden');
+    
+    // Activate selected tab button
+    const activeButton = document.getElementById(tabName + '-tab');
+    activeButton.classList.remove('border-transparent', 'text-gray-500');
+    activeButton.classList.add('border-purple-500', 'text-purple-600');
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить предмет - Инвентарь{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="border-b border-gray-200 pb-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <i class="fas fa-plus mr-3 text-purple-600"></i>
+                        Добавить предмет в инвентарь
+                    </h1>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Внесите информацию о новом предмете исторической реконструкции.
+                    </p>
+                </div>
+                <a href="/inventory" 
+                   class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>К списку
+                </a>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+            <div class="p-6">
+                <form action="/inventory/add" method="post" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Basic Info -->
+                        <div class="md:col-span-2">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Основная информация</h3>
+                        </div>
+                        
+                        <!-- Owner -->
+                        <div>
+                            <label for="owner" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user text-gray-400 mr-2"></i>Владелец <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="owner" 
+                                   name="owner" 
+                                   required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Имя владельца">
+                        </div>
+
+                        <!-- Item Name -->
+                        <div>
+                            <label for="item_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-tag text-gray-400 mr-2"></i>Название предмета <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="item_name" 
+                                   name="item_name" 
+                                   required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: Рубаха, Меч, Фибула">
+                        </div>
+
+                        <!-- Item Type -->
+                        <div>
+                            <label for="item_type" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-layer-group text-gray-400 mr-2"></i>Тип предмета
+                            </label>
+                            <select id="item_type" 
+                                    name="item_type"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <option value="">Выберите тип</option>
+                                <option value="одежда">Одежда</option>
+                                <option value="оружие">Оружие</option>
+                                <option value="украшения">Украшения</option>
+                                <option value="аксессуары">Аксессуары</option>
+                                <option value="обувь">Обувь</option>
+                                <option value="инструменты">Инструменты</option>
+                                <option value="артефакты">Артефакты</option>
+                            </select>
+                        </div>
+
+                        <!-- Subtype -->
+                        <div>
+                            <label for="subtype" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-sitemap text-gray-400 mr-2"></i>Подтип
+                            </label>
+                            <input type="text" 
+                                   id="subtype" 
+                                   name="subtype"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: рубаха, меч, фибула">
+                        </div>
+
+                        <!-- Material Properties -->
+                        <div class="md:col-span-2">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4 border-t pt-6">Материал и внешний вид</h3>
+                        </div>
+
+                        <!-- Material -->
+                        <div>
+                            <label for="material" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-cube text-gray-400 mr-2"></i>Материал
+                            </label>
+                            <input type="text" 
+                                   id="material" 
+                                   name="material"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: лён, железо, кожа, металл">
+                        </div>
+
+                        <!-- Color -->
+                        <div>
+                            <label for="color" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-palette text-gray-400 mr-2"></i>Цвет
+                            </label>
+                            <input type="text" 
+                                   id="color" 
+                                   name="color"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: некрашеный, красный, чёрный">
+                        </div>
+
+                        <!-- Size -->
+                        <div>
+                            <label for="size" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-ruler text-gray-400 mr-2"></i>Размер
+                            </label>
+                            <input type="text" 
+                                   id="size" 
+                                   name="size"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: M, 42-43, длина 80см">
+                        </div>
+
+                        <!-- Historical Context -->
+                        <div class="md:col-span-2">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4 border-t pt-6">Историческая информация</h3>
+                        </div>
+
+                        <!-- Find Type -->
+                        <div>
+                            <label for="find_type" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-search text-gray-400 mr-2"></i>Тип находки
+                            </label>
+                            <input type="text" 
+                                   id="find_type" 
+                                   name="find_type"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: тип 3, тип Y, тип 4">
+                        </div>
+
+                        <!-- Region -->
+                        <div>
+                            <label for="region" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>Регион
+                            </label>
+                            <input type="text" 
+                                   id="region" 
+                                   name="region"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: Хедебю, Бирка, Торсберг">
+                        </div>
+
+                        <!-- Place -->
+                        <div>
+                            <label for="place" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-location-dot text-gray-400 mr-2"></i>Место
+                            </label>
+                            <input type="text" 
+                                   id="place" 
+                                   name="place"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Конкретное место находки">
+                        </div>
+
+                        <!-- Burial Number -->
+                        <div>
+                            <label for="burial_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-hashtag text-gray-400 mr-2"></i>Номер погребения
+                            </label>
+                            <input type="text" 
+                                   id="burial_number" 
+                                   name="burial_number"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Например: bj 750, № 123">
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="md:col-span-2">
+                            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-sticky-note text-gray-400 mr-2"></i>Заметки
+                            </label>
+                            <textarea id="notes" 
+                                      name="notes" 
+                                      rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                      placeholder="Дополнительная информация, особенности, комментарии..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <a href="/inventory" 
+                           class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                            Отмена
+                        </a>
+                        <button type="submit" 
+                                class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-save mr-2"></i>Сохранить предмет
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Information -->
+        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">
+                        Советы по заполнению
+                    </h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Обязательными являются только поля "Владелец" и "Название предмета"</li>
+                            <li>Используйте исторически точные названия и термины</li>
+                            <li>В поле "Регион" указывайте археологический памятник или культуру</li>
+                            <li>В заметках можно указать источники реконструкции или особенности изготовления</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
