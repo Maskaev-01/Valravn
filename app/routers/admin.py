@@ -265,4 +265,208 @@ async def sync_vk_users(
         return RedirectResponse(
             url=f"/admin/users?error=sync_failed&message={str(e)}", 
             status_code=302
+        )
+
+# Новые роуты для управления связыванием аккаунтов
+@router.get("/admin/user-accounts", response_class=HTMLResponse)
+async def manage_user_accounts(
+    request: Request,
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Страница управления связыванием аккаунтов"""
+    # Находим потенциальные дубликаты
+    potential_duplicates = []
+    
+    # Получаем всех пользователей
+    all_users = db.query(User).all()
+    
+    # 1. Пользователи с одинаковыми email
+    users_by_email = {}
+    for user in all_users:
+        if user.email:
+            email = user.email.lower()
+            if email not in users_by_email:
+                users_by_email[email] = []
+            users_by_email[email].append(user)
+    
+    for email, users in users_by_email.items():
+        if len(users) > 1:
+            potential_duplicates.append({
+                'type': 'email_match',
+                'email': email,
+                'users': users,
+                'confidence': 'high'
+            })
+    
+    # 2. Пользователи с точно одинаковыми именами (высокая вероятность)
+    users_by_exact_name = {}
+    for user in all_users:
+        if user.first_name and user.last_name:
+            full_name = f"{user.first_name} {user.last_name}".strip().lower()
+            if full_name not in users_by_exact_name:
+                users_by_exact_name[full_name] = []
+            users_by_exact_name[full_name].append(user)
+    
+    for name, users in users_by_exact_name.items():
+        if len(users) > 1:
+            # Проверяем что в группе есть VK и обычные пользователи
+            vk_users = [u for u in users if u.vk_id]
+            regular_users = [u for u in users if not u.vk_id]
+            
+            if vk_users and regular_users:
+                potential_duplicates.append({
+                    'type': 'exact_name_match',
+                    'name': name,
+                    'users': users,
+                    'vk_users': vk_users,
+                    'regular_users': regular_users,
+                    'confidence': 'high'
+                })
+    
+    # 3. Пользователи с похожими именами (средняя вероятность)
+    def normalize_name(name):
+        """Нормализует имя для сравнения"""
+        import re
+        # Убираем лишние символы и приводим к нижнему регистру
+        name = re.sub(r'[^\w\s]', '', name.lower())
+        # Заменяем английские буквы на русские и наоборот для транслита
+        translite_map = {
+            'nikita': 'никита', 'ivan': 'иван', 'petr': 'петр', 'pavel': 'павел',
+            'alexander': 'александр', 'dmitry': 'дмитрий', 'sergey': 'сергей',
+            'yakimov': 'якимов', 'petrov': 'петров', 'ivanov': 'иванов'
+        }
+        for eng, rus in translite_map.items():
+            name = name.replace(eng, rus)
+            name = name.replace(rus, eng)
+        return name.strip()
+    
+    users_by_normalized_name = {}
+    for user in all_users:
+        # Проверяем разные варианты имен
+        name_variants = []
+        
+        if user.first_name and user.last_name:
+            # Полное имя из профиля
+            name_variants.append(f"{user.first_name} {user.last_name}")
+        
+        if user.username and not user.username.startswith('vk_'):
+            # Username (если не автоматический vk_)
+            name_variants.append(user.username)
+        
+        for variant in name_variants:
+            normalized = normalize_name(variant)
+            if len(normalized) > 3:  # Игнорируем слишком короткие имена
+                if normalized not in users_by_normalized_name:
+                    users_by_normalized_name[normalized] = []
+                users_by_normalized_name[normalized].append(user)
+    
+    for name, users in users_by_normalized_name.items():
+        if len(users) > 1:
+            # Убираем уже найденные точные совпадения
+            already_found = False
+            for duplicate in potential_duplicates:
+                if duplicate['type'] in ['email_match', 'exact_name_match']:
+                    if set(u.id for u in users) == set(u.id for u in duplicate['users']):
+                        already_found = True
+                        break
+            
+            if not already_found:
+                vk_users = [u for u in users if u.vk_id]
+                regular_users = [u for u in users if not u.vk_id]
+                
+                if vk_users and regular_users:
+                    potential_duplicates.append({
+                        'type': 'similar_name_match',
+                        'name': name,
+                        'users': users,
+                        'vk_users': vk_users,
+                        'regular_users': regular_users,
+                        'confidence': 'medium'
+                    })
+    
+    # 4. Пользователи без email с VK аккаунтами (низкая вероятность, но стоит проверить)
+    vk_users_no_link = []
+    regular_users_no_email = []
+    
+    for user in all_users:
+        if user.vk_id and not user.email:
+            vk_users_no_link.append(user)
+        elif not user.vk_id and not user.email:
+            regular_users_no_email.append(user)
+    
+    if vk_users_no_link and regular_users_no_email:
+        potential_duplicates.append({
+            'type': 'no_email_check',
+            'users': vk_users_no_link + regular_users_no_email,
+            'vk_users': vk_users_no_link,
+            'regular_users': regular_users_no_email,
+            'confidence': 'low'
+        })
+    
+    # Сортируем по уровню уверенности
+    confidence_order = {'high': 1, 'medium': 2, 'low': 3}
+    potential_duplicates.sort(key=lambda x: confidence_order.get(x['confidence'], 4))
+    
+    return templates.TemplateResponse("admin/user_accounts.html", {
+        "request": request,
+        "user": admin_user,
+        "potential_duplicates": potential_duplicates,
+        "all_users": all_users
+    })
+
+@router.post("/admin/link-accounts")
+async def link_user_accounts(
+    request: Request,
+    primary_user_id: int = Form(...),
+    secondary_user_id: int = Form(...),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Связывает два аккаунта пользователя"""
+    try:
+        primary_user = db.query(User).filter(User.id == primary_user_id).first()
+        secondary_user = db.query(User).filter(User.id == secondary_user_id).first()
+        
+        if not primary_user or not secondary_user:
+            return RedirectResponse(
+                url="/admin/user-accounts?error=users_not_found", 
+                status_code=302
+            )
+        
+        # Переносим данные с вторичного аккаунта на основной
+        if secondary_user.vk_id and not primary_user.vk_id:
+            primary_user.vk_id = secondary_user.vk_id
+            primary_user.avatar_url = secondary_user.avatar_url or primary_user.avatar_url
+            primary_user.is_whitelisted = secondary_user.is_whitelisted or primary_user.is_whitelisted
+        
+        if secondary_user.email and not primary_user.email:
+            primary_user.email = secondary_user.email
+            
+        if secondary_user.first_name and not primary_user.first_name:
+            primary_user.first_name = secondary_user.first_name
+            
+        if secondary_user.last_name and not primary_user.last_name:
+            primary_user.last_name = secondary_user.last_name
+        
+        # Переносим права админа (берем максимальный уровень)
+        primary_user.is_admin = max(primary_user.is_admin, secondary_user.is_admin)
+        
+        # Обновляем записи бюджета и инвентаря
+        db.query(Budget).filter(Budget.user_id == secondary_user.id).update({"user_id": primary_user.id})
+        db.query(Inventory).filter(Inventory.created_by_user_id == secondary_user.id).update({"created_by_user_id": primary_user.id})
+        
+        # Удаляем вторичный аккаунт
+        db.delete(secondary_user)
+        db.commit()
+        
+        return RedirectResponse(
+            url="/admin/user-accounts?success=accounts_linked", 
+            status_code=302
+        )
+        
+    except Exception as e:
+        return RedirectResponse(
+            url=f"/admin/user-accounts?error=link_failed&message={str(e)}", 
+            status_code=302
         ) 

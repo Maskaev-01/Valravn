@@ -78,7 +78,7 @@ class VKOAuth:
             async with httpx.AsyncClient() as client:
                 params = {
                     'user_ids': resolved_id,
-                    'fields': 'photo_100,screen_name',
+                    'fields': 'photo_100,screen_name,contacts',  # Добавляем contacts для получения email
                     'access_token': self.service_token,
                     'v': '5.131'
                 }
@@ -95,6 +95,7 @@ class VKOAuth:
                         'last_name': user_data.get('last_name', ''),
                         'photo_100': user_data.get('photo_100'),
                         'screen_name': user_data.get('screen_name'),
+                        'email': user_data.get('email'),  # Email если доступен
                         'is_closed': user_data.get('is_closed', False),
                         'can_access_closed': user_data.get('can_access_closed', True)
                     }

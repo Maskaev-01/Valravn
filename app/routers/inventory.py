@@ -109,9 +109,24 @@ async def inventory_list(
 
 @router.get("/inventory/add", response_class=HTMLResponse)
 async def add_inventory_page(request: Request, current_user: User = Depends(get_current_user_from_cookie)):
+    # Определяем имя пользователя для автозаполнения
+    user_display_name = ""
+    is_vk_user = bool(current_user.vk_id)
+    is_admin = current_user.is_admin == 1
+    
+    if current_user.vk_id:  # VK пользователь
+        user_display_name = f"{current_user.first_name} {current_user.last_name}".strip()
+        if not user_display_name:
+            user_display_name = current_user.username
+    else:  # Обычный пользователь
+        user_display_name = current_user.username
+    
     return templates.TemplateResponse("inventory/add.html", {
         "request": request,
-        "user": current_user
+        "user": current_user,
+        "user_display_name": user_display_name,
+        "is_vk_user": is_vk_user,
+        "is_admin": is_admin
     })
 
 @router.post("/inventory/add")

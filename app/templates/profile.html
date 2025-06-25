@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-user mr-2"></i>Мой профиль
+            </h2>
+        </div>
+
+        <!-- Основная информация -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">
+                    <i class="fas fa-info-circle mr-2"></i>Основная информация
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm text-gray-600">Имя пользователя:</label>
+                        <p class="font-medium">{{ user.username }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Имя:</label>
+                        <p class="font-medium">{{ user.first_name or 'Не указано' }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Фамилия:</label>
+                        <p class="font-medium">{{ user.last_name or 'Не указано' }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Email:</label>
+                        <p class="font-medium">{{ user.email or 'Не указан' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">
+                    <i class="fab fa-vk mr-2"></i>VK интеграция
+                </h3>
+                <div class="space-y-3">
+                    {% if user.vk_id %}
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <span class="text-green-800 font-medium">VK подключен</span>
+                        </div>
+                        <p class="text-sm text-green-600 mt-1">VK ID: {{ user.vk_id }}</p>
+                        {% if user.is_whitelisted %}
+                        <div class="mt-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <i class="fas fa-list mr-1"></i>В белом списке
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-times-circle text-gray-500 mr-2"></i>
+                            <span class="text-gray-700">VK не подключен</span>
+                        </div>
+                        <a href="/auth/vk" class="inline-flex items-center mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fab fa-vk mr-2"></i>Подключить VK
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Возможные дубликаты аккаунтов -->
+        {% if potential_matches %}
+        <div class="border-t pt-6">
+            <h3 class="text-lg font-semibold mb-4 text-yellow-700">
+                <i class="fas fa-user-friends mr-2"></i>Возможные связанные аккаунты
+            </h3>
+            <p class="text-sm text-gray-600 mb-4">
+                Мы нашли аккаунты, которые могут принадлежать вам. Если это ваши аккаунты, вы можете связать их.
+            </p>
+
+            <div class="space-y-4">
+                {% for match in potential_matches %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                {% if match.user.vk_id %}
+                                <i class="fab fa-vk text-yellow-600"></i>
+                                {% else %}
+                                <i class="fas fa-user text-yellow-600"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-800">
+                                    {{ match.user.first_name }} {{ match.user.last_name }}
+                                    <span class="text-sm text-gray-500">({{ match.user.username }})</span>
+                                </h4>
+                                <p class="text-sm text-yellow-600">{{ match.description }}</p>
+                                {% if match.user.email %}
+                                <p class="text-sm text-gray-500">Email: {{ match.user.email }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            {% if match.confidence == 'high' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Высокая вероятность
+                            </span>
+                            {% endif %}
+                            
+                            <form action="/request-account-link" method="post" class="inline">
+                                <input type="hidden" name="target_user_id" value="{{ match.user.id }}">
+                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-link mr-1"></i>Связать
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Активные запросы на связывание -->
+        {% if link_requests %}
+        <div class="border-t pt-6 mt-6">
+            <h3 class="text-lg font-semibold mb-4 text-blue-700">
+                <i class="fas fa-paper-plane mr-2"></i>Запросы на связывание
+            </h3>
+
+            <div class="space-y-4">
+                {% for request in link_requests %}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    {% if request.user_id == user.id %}
+                    <!-- Исходящий запрос -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">
+                                <i class="fas fa-arrow-right mr-2 text-blue-600"></i>
+                                Запрос отправлен пользователю: {{ request.target.first_name }} {{ request.target.last_name }}
+                            </h4>
+                            <p class="text-sm text-gray-600">
+                                Отправлен: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-clock mr-1"></i>Ожидает ответа
+                        </span>
+                    </div>
+                    {% else %}
+                    <!-- Входящий запрос -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">
+                                <i class="fas fa-arrow-left mr-2 text-green-600"></i>
+                                Запрос от пользователя: {{ request.requester.first_name }} {{ request.requester.last_name }}
+                            </h4>
+                            <p class="text-sm text-gray-600">
+                                Получен: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                            <p class="text-sm text-blue-600 mt-1">
+                                Пользователь хочет связать свой аккаунт с вашим
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <form action="/confirm-account-link" method="post" class="inline">
+                                <input type="hidden" name="request_id" value="{{ request.id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-check mr-1"></i>Принять
+                                </button>
+                            </form>
+                            <form action="/confirm-account-link" method="post" class="inline">
+                                <input type="hidden" name="request_id" value="{{ request.id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors">
+                                    <i class="fas fa-times mr-1"></i>Отклонить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Инструкции -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-lg font-semibold mb-2 text-blue-800">
+            <i class="fas fa-info-circle mr-2"></i>Как это работает?
+        </h3>
+        <ul class="text-sm text-blue-700 space-y-1">
+            <li><i class="fas fa-dot-circle mr-2"></i>Мы автоматически находим аккаунты с одинаковыми email или именами</li>
+            <li><i class="fas fa-dot-circle mr-2"></i>Вы можете отправить запрос на связывание подозрительному аккаунту</li>
+            <li><i class="fas fa-dot-circle mr-2"></i>Владелец другого аккаунта должен подтвердить связывание</li>
+            <li><i class="fas fa-dot-circle mr-2"></i>После подтверждения аккаунты будут объединены</li>
+            <li><i class="fas fa-dot-circle mr-2"></i>Если у вас проблемы - обратитесь к администратору</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 

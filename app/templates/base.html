@@ -97,10 +97,10 @@
                                     title="Переключить тему">
                                 <i id="theme-icon" class="fas fa-moon"></i>
                             </button>
-                            <span class="text-gray-700 dark:text-gray-300 text-sm">
+                            <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm flex items-center transition-colors">
                                 <i class="fas fa-user mr-1"></i>{{ user.username }}
                                 {% if user.is_admin %}<span class="bg-red-100 text-red-800 dark:bg-raven-800 dark:text-raven-200 text-xs px-2 py-1 rounded-full ml-2">Админ</span>{% endif %}
-                            </span>
+                            </a>
                             <a href="/auth/logout" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 <i class="fas fa-sign-out-alt mr-1"></i>Выход
                             </a>

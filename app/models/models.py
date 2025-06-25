@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Date, Float, Text, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Date, Float, Text, Boolean, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class User(Base):
@@ -74,3 +75,21 @@ class VKWhitelist(Base):
     is_admin = Column(Boolean, default=False)   # Админские права
     added_by = Column(Integer, nullable=True)   # Кто добавил в whitelist
     created_at = Column(DateTime(timezone=True), server_default=func.now()) 
+
+class AccountLinkRequest(Base):
+    """Запросы на связывание аккаунтов"""
+    __tablename__ = "account_link_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    target_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(String, default="pending")  # pending, approved, rejected
+    message = Column(Text, nullable=True)  # Опциональное сообщение от пользователя
+    created_at = Column(DateTime, server_default=func.now())
+    processed_at = Column(DateTime, nullable=True)
+    processed_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто обработал (админ или целевой пользователь)
+
+    # Отношения
+    requester = relationship("User", foreign_keys=[user_id])
+    target = relationship("User", foreign_keys=[target_user_id])
+    processor = relationship("User", foreign_keys=[processed_by]) 

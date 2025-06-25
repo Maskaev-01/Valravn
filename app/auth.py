@@ -40,41 +40,74 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
-def create_or_update_vk_user(db: Session, vk_id: str, first_name: str, last_name: str, avatar_url: Optional[str] = None):
-    """Создает или обновляет пользователя VK"""
+def create_or_update_vk_user(db: Session, vk_id: str, first_name: str, last_name: str, avatar_url: Optional[str] = None, email: Optional[str] = None):
+    """Создает или обновляет пользователя VK с проверкой дублирования"""
     # Проверяем, есть ли пользователь в whitelist
     whitelist_entry = db.query(VKWhitelist).filter(VKWhitelist.vk_id == vk_id).first()
     if not whitelist_entry:
         raise HTTPException(status_code=403, detail="VK ID не в whitelist. Обратитесь к администратору.")
     
-    # Ищем существующего пользователя
+    # Сначала ищем существующего пользователя по vk_id
     user = db.query(User).filter(User.vk_id == vk_id).first()
     
     if user:
-        # Обновляем данные пользователя
+        # Обновляем данные существующего VK пользователя
         user.first_name = first_name
         user.last_name = last_name
         user.avatar_url = avatar_url
+        if email and not user.email:
+            user.email = email
         user.is_admin = 1 if whitelist_entry.is_admin else 0
         user.is_whitelisted = True
-    else:
-        # Создаем нового пользователя
-        username = f"vk_{vk_id}"
-        user = User(
-            username=username,
-            vk_id=vk_id,
-            first_name=first_name,
-            last_name=last_name,
-            avatar_url=avatar_url,
-            is_admin=1 if whitelist_entry.is_admin else 0,
-            is_whitelisted=True,
-            hashed_password=None  # Для VK users пароль не нужен
-        )
-        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
     
+    # Если пользователя по vk_id нет, проверяем есть ли пользователь с таким email
+    existing_user_by_email = None
+    if email:
+        existing_user_by_email = db.query(User).filter(
+            User.email == email,
+            User.vk_id.is_(None)  # Только пользователи без VK ID
+        ).first()
+    
+    if existing_user_by_email:
+        # Найден пользователь с таким email - связываем аккаунты
+        existing_user_by_email.vk_id = vk_id
+        existing_user_by_email.first_name = first_name
+        existing_user_by_email.last_name = last_name
+        existing_user_by_email.avatar_url = avatar_url
+        existing_user_by_email.is_admin = max(existing_user_by_email.is_admin, 1 if whitelist_entry.is_admin else 0)
+        existing_user_by_email.is_whitelisted = True
+        db.commit()
+        db.refresh(existing_user_by_email)
+        return existing_user_by_email
+    
+    # Создаем нового пользователя
+    username = f"vk_{vk_id}"
+    
+    # Проверяем уникальность username
+    counter = 1
+    base_username = username
+    while db.query(User).filter(User.username == username).first():
+        username = f"{base_username}_{counter}"
+        counter += 1
+    
+    new_user = User(
+        username=username,
+        vk_id=vk_id,
+        first_name=first_name,
+        last_name=last_name,
+        avatar_url=avatar_url,
+        email=email,
+        is_admin=1 if whitelist_entry.is_admin else 0,
+        is_whitelisted=True,
+        hashed_password=None  # Для VK users пароль не нужен
+    )
+    db.add(new_user)
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(new_user)
+    return new_user
 
 def is_vk_user_whitelisted(db: Session, vk_id: str) -> bool:
     """Проверяет, есть ли VK пользователь в whitelist"""

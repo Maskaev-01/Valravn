@@ -1,10 +1,11 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Form, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy import func, and_, or_
 from app.database import get_db
-from app.models.models import User, VKWhitelist
+from app.models.models import User, VKWhitelist, AccountLinkRequest
 from app.models.schemas import UserCreate, UserLogin
 from app.auth import (
     authenticate_user, 
@@ -257,6 +258,7 @@ async def vk_id_process(
         first_name = data.get("first_name", "").strip()
         last_name = data.get("last_name", "").strip()
         photo_100 = data.get("photo_100")
+        email = data.get("email")  # Email из VK ID SDK
         
         if not user_id:
             print(f"Missing user_id: {user_id}")  # Отладка
@@ -271,6 +273,9 @@ async def vk_id_process(
                     last_name = user_info["last_name"] or last_name
                     photo_100 = user_info["photo_100"] or photo_100
                     user_id = user_info["id"]  # Используем числовой ID
+                    # Если email не был получен из SDK, пробуем из API
+                    if not email:
+                        email = user_info.get("email")
             except Exception as e:
                 print(f"Failed to get additional user info: {e}")
         
@@ -283,15 +288,16 @@ async def vk_id_process(
         elif not last_name:
             last_name = "User"
         
-        print(f"Processing VK user: {user_id} - {first_name} {last_name}")  # Отладка
+        print(f"Processing VK user: {user_id} - {first_name} {last_name} ({email})")  # Отладка
         
-        # Создаем или обновляем пользователя
+        # Создаем или обновляем пользователя с передачей email
         user = create_or_update_vk_user(
             db=db,
             vk_id=user_id,
             first_name=first_name,
             last_name=last_name,
-            avatar_url=photo_100
+            avatar_url=photo_100,
+            email=email  # Передаем email для связывания аккаунтов
         )
         print(f"User created/updated: {user.username}")  # Отладка
         
@@ -308,4 +314,149 @@ async def vk_id_process(
         
     except Exception as e:
         print(f"VK Auth Error: {str(e)}")  # Отладка
-        raise HTTPException(status_code=400, detail=f"Ошибка VK авторизации: {str(e)}") 
+        raise HTTPException(status_code=400, detail=f"Ошибка VK авторизации: {str(e)}")
+
+@router.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Профиль пользователя с возможностью связывания аккаунтов"""
+    
+    # Ищем возможные дубликаты для этого пользователя
+    potential_matches = []
+    
+    # Если у пользователя есть email - ищем других с таким же email
+    if current_user.email:
+        email_matches = db.query(User).filter(
+            User.email == current_user.email,
+            User.id != current_user.id
+        ).all()
+        
+        for match in email_matches:
+            potential_matches.append({
+                'user': match,
+                'match_type': 'email',
+                'confidence': 'high',
+                'description': f'Одинаковый email: {current_user.email}'
+            })
+    
+    # Если у пользователя есть имя - ищем похожие имена
+    if current_user.first_name and current_user.last_name:
+        full_name = f"{current_user.first_name} {current_user.last_name}".lower()
+        
+        # Точные совпадения
+        exact_matches = db.query(User).filter(
+            func.lower(func.concat(User.first_name, ' ', User.last_name)) == full_name,
+            User.id != current_user.id,
+            # Показываем только если у одного есть VK, у другого нет
+            or_(
+                and_(User.vk_id.is_(None), current_user.vk_id.is_not(None)),
+                and_(User.vk_id.is_not(None), current_user.vk_id.is_(None))
+            )
+        ).all()
+        
+        for match in exact_matches:
+            potential_matches.append({
+                'user': match,
+                'match_type': 'name',
+                'confidence': 'high',
+                'description': f'Точное совпадение имени: {full_name.title()}'
+            })
+    
+    # Проверяем есть ли уже запросы на связывание
+    link_requests = db.query(AccountLinkRequest).filter(
+        or_(
+            AccountLinkRequest.user_id == current_user.id,
+            AccountLinkRequest.target_user_id == current_user.id
+        ),
+        AccountLinkRequest.status == 'pending'
+    ).all()
+    
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "user": current_user,
+        "potential_matches": potential_matches,
+        "link_requests": link_requests
+    })
+
+@router.post("/request-account-link")
+async def request_account_link(
+    request: Request,
+    target_user_id: int = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Запрос на связывание аккаунтов"""
+    
+    # Проверяем что цель существует
+    target_user = db.query(User).filter(User.id == target_user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    
+    # Проверяем что нет уже такого запроса
+    existing_request = db.query(AccountLinkRequest).filter(
+        AccountLinkRequest.user_id == current_user.id,
+        AccountLinkRequest.target_user_id == target_user_id,
+        AccountLinkRequest.status == 'pending'
+    ).first()
+    
+    if existing_request:
+        raise HTTPException(status_code=400, detail="Запрос уже отправлен")
+    
+    # Создаем запрос
+    link_request = AccountLinkRequest(
+        user_id=current_user.id,
+        target_user_id=target_user_id,
+        status='pending',
+        created_at=datetime.utcnow()
+    )
+    
+    db.add(link_request)
+    db.commit()
+    
+    return RedirectResponse(url="/profile", status_code=302)
+
+@router.post("/confirm-account-link")
+async def confirm_account_link(
+    request: Request,
+    request_id: int = Form(...),
+    action: str = Form(...),  # 'approve' или 'reject'
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Подтверждение или отклонение запроса на связывание"""
+    
+    # Находим запрос
+    link_request = db.query(AccountLinkRequest).filter(
+        AccountLinkRequest.id == request_id,
+        AccountLinkRequest.target_user_id == current_user.id,  # Только тот, кому адресован запрос
+        AccountLinkRequest.status == 'pending'
+    ).first()
+    
+    if not link_request:
+        raise HTTPException(status_code=404, detail="Запрос не найден")
+    
+    if action == 'approve':
+        # Связываем аккаунты
+        requester = db.query(User).filter(User.id == link_request.user_id).first()
+        
+        if requester and current_user:
+            # Если у одного есть VK, у другого нет - объединяем
+            if requester.vk_id and not current_user.vk_id:
+                current_user.vk_id = requester.vk_id
+                current_user.is_whitelisted = requester.is_whitelisted
+                # Удаляем дубликат
+                db.delete(requester)
+            elif current_user.vk_id and not requester.vk_id:
+                requester.vk_id = current_user.vk_id
+                requester.is_whitelisted = current_user.is_whitelisted
+                # Удаляем дубликат
+                db.delete(current_user)
+            
+            link_request.status = 'approved'
+            link_request.processed_at = datetime.utcnow()
+    else:
+        link_request.status = 'rejected'
+        link_request.processed_at = datetime.utcnow()
+    
+    db.commit()
+    
+    return RedirectResponse(url="/profile", status_code=302) 
