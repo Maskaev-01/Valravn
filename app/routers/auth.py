@@ -344,14 +344,18 @@ async def profile(request: Request, current_user: User = Depends(get_current_use
         full_name = f"{current_user.first_name} {current_user.last_name}".lower()
         
         # Точные совпадения
+        # Показываем только если у одного есть VK, у другого нет
+        if current_user.vk_id:
+            # У текущего пользователя есть VK ID - ищем тех, у кого нет
+            vk_filter = User.vk_id.is_(None)
+        else:
+            # У текущего пользователя нет VK ID - ищем тех, у кого есть
+            vk_filter = User.vk_id.is_not(None)
+            
         exact_matches = db.query(User).filter(
             func.lower(func.concat(User.first_name, ' ', User.last_name)) == full_name,
             User.id != current_user.id,
-            # Показываем только если у одного есть VK, у другого нет
-            or_(
-                and_(User.vk_id.is_(None), current_user.vk_id.is_not(None)),
-                and_(User.vk_id.is_not(None), current_user.vk_id.is_(None))
-            )
+            vk_filter
         ).all()
         
         for match in exact_matches:
