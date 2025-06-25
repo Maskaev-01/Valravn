@@ -48,6 +48,11 @@ async def home(request: Request, db: Session = Depends(get_db)):
 async def login_redirect():
     return RedirectResponse(url="/auth/login", status_code=302)
 
+# Редирект для старой ссылки logout
+@app.get("/logout")
+async def logout_redirect():
+    return RedirectResponse(url="/auth/logout", status_code=302)
+
 # Тестовая страница для проверки роутов
 @app.get("/test-routes")
 async def test_routes():

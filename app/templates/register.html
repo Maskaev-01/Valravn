@@ -3,25 +3,29 @@
 {% block title %}Регистрация - Valravn{% endblock %}
 
 {% block content %}
-<div class="flex-1 flex items-center justify-center">
-    <div class="max-w-md w-full space-y-8 px-4">
+<div class="flex items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
         <div>
-            <div class="text-center">
-                <i class="fas fa-raven text-6xl text-valravn-600 mb-4"></i>
-                <h2 class="text-3xl font-extrabold text-gray-900">Регистрация</h2>
-                <p class="mt-2 text-sm text-gray-600">Присоединяйтесь к системе управления бюджетом</p>
+            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-100">
+                <i class="fas fa-raven text-red-600 text-xl"></i>
             </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Регистрация
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Присоединяйтесь к системе управления бюджетом
+            </p>
         </div>
         
-        <div class="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
-            <form class="space-y-6" method="post" action="/register">
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <form class="space-y-6" method="post" action="/auth/register">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700">
                         Имя пользователя
                     </label>
                     <div class="mt-1 relative">
                         <input id="username" name="username" type="text" required 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 focus:z-10 sm:text-sm"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
                                placeholder="Выберите имя пользователя">
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-user text-gray-400"></i>
@@ -35,7 +39,7 @@
                     </label>
                     <div class="mt-1 relative">
                         <input id="email" name="email" type="email" 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 focus:z-10 sm:text-sm"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
                                placeholder="Ваш email адрес">
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-envelope text-gray-400"></i>
@@ -49,7 +53,7 @@
                     </label>
                     <div class="mt-1 relative">
                         <input id="password" name="password" type="password" required 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 focus:z-10 sm:text-sm"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
                                placeholder="Создайте пароль">
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-lock text-gray-400"></i>
@@ -63,7 +67,7 @@
                     </label>
                     <div class="mt-1 relative">
                         <input id="secret_code" name="secret_code" type="password" required 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 focus:z-10 sm:text-sm"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
                                placeholder="Введите секретный код">
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <i class="fas fa-key text-gray-400"></i>
@@ -71,7 +75,7 @@
                     </div>
                     <p class="mt-2 text-sm text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Секретный код необходим для регистрации в системе
+                        Секретный код: valravn2024
                     </p>
                 </div>
 
@@ -82,7 +86,7 @@
                             <i class="fas fa-exclamation-circle text-red-400"></i>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-red-800">{{ error }}</p>
+                            <p class="text-sm text-red-700">{{ error }}</p>
                         </div>
                     </div>
                 </div>
@@ -95,7 +99,7 @@
                             <i class="fas fa-check-circle text-green-400"></i>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-green-800">{{ success }}</p>
+                            <p class="text-sm text-green-700">{{ success }}</p>
                         </div>
                     </div>
                 </div>
@@ -103,21 +107,18 @@
 
                 <div>
                     <button type="submit" 
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-valravn-600 hover:bg-valravn-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-valravn-500 transition-colors">
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                         <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="fas fa-user-plus text-valravn-500 group-hover:text-valravn-400"></i>
+                            <i class="fas fa-user-plus text-red-500 group-hover:text-red-400"></i>
                         </span>
                         Зарегистрироваться
                     </button>
                 </div>
 
                 <div class="text-center">
-                    <p class="text-sm text-gray-600">
-                        Уже есть аккаунт? 
-                        <a href="/login" class="font-medium text-valravn-600 hover:text-valravn-500 transition-colors">
-                            Войти
-                        </a>
-                    </p>
+                    <a href="/auth/login" class="font-medium text-red-600 hover:text-red-500">
+                        Уже есть аккаунт? Войти
+                    </a>
                 </div>
             </form>
         </div>
