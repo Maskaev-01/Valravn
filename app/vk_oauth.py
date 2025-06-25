@@ -24,7 +24,7 @@ class VKOAuth:
             "client_id": self.app_id,
             "redirect_uri": self.redirect_uri,
             "response_type": "code",
-            "scope": "email",  # Запрашиваем доступ к email
+            # Убираем scope="email" так как он недоступен для многих VK приложений
             "v": "5.131"
         }
         

@@ -34,6 +34,11 @@ async def admin_dashboard(request: Request, admin_user: User = Depends(get_admin
         "recent_budget": recent_budget
     })
 
+# Редирект для исправления неправильных ссылок
+@router.get("/admin/dashboard")
+async def admin_dashboard_redirect():
+    return RedirectResponse(url="/admin", status_code=301)
+
 @router.get("/admin/budget", response_class=HTMLResponse)
 async def admin_budget(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     # Получаем все записи бюджета с пагинацией

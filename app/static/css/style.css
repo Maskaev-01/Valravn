@@ -17,7 +17,7 @@
 /* Dark mode background patterns */
 .dark {
   background-color: var(--raven-black);
-  color: var(--raven-very-light);
+  color: var(--raven-white);
 }
 
 /* Custom scrollbar for dark theme */
@@ -46,45 +46,49 @@
   border-color: var(--raven-red);
 }
 
-/* Dark theme card styles */
+/* Dark theme card styles - ЧЕРНЫЙ/СЕРЫЙ ФОН = КРАСНЫЙ/БЕЛЫЙ ТЕКСТ */
 .dark .bg-white {
   background-color: var(--raven-dark-gray) !important;
   border-color: var(--raven-light-gray) !important;
-  color: var(--raven-very-light) !important;
+  color: var(--raven-white) !important;
 }
 
 .dark .bg-gray-50 {
   background-color: var(--raven-black) !important;
-  color: var(--raven-very-light) !important;
+  color: var(--raven-white) !important;
 }
 
 .dark .bg-gray-100 {
   background-color: var(--raven-dark-gray) !important;
-  color: var(--raven-very-light) !important;
+  color: var(--raven-white) !important;
 }
 
 /* Button hover effects */
 .dark .hover\:bg-gray-200:hover {
   background-color: var(--raven-light-gray) !important;
+  color: var(--raven-black) !important;
 }
 
 .dark .hover\:bg-gray-100:hover {
   background-color: var(--raven-light-gray) !important;
+  color: var(--raven-black) !important;
 }
 
-/* Raven theme specific buttons */
+/* Raven theme specific buttons - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-raven-600 {
   background-color: var(--raven-red);
+  color: var(--raven-black) !important;
 }
 
 .dark .hover\:bg-raven-700:hover {
   background-color: var(--raven-bright-red);
+  color: var(--raven-black) !important;
 }
 
-/* Table styling for dark theme */
+/* Table styling for dark theme - ЧЕРНЫЙ/СЕРЫЙ ФОН = КРАСНЫЙ/БЕЛЫЙ ТЕКСТ */
 .dark table {
   border-color: var(--raven-light-gray);
-  color: var(--raven-very-light);
+  color: var(--raven-white);
 }
 
 .dark th {
@@ -94,14 +98,15 @@
 
 .dark td {
   border-color: var(--raven-light-gray);
-  color: var(--raven-very-light) !important;
+  color: var(--raven-white) !important;
 }
 
 .dark tr:hover {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
-/* Form elements dark theme */
+/* Form elements dark theme - ЧЕРНЫЙ/СЕРЫЙ ФОН = КРАСНЫЙ/БЕЛЫЙ ТЕКСТ */
 .dark input,
 .dark select,
 .dark textarea {
@@ -121,56 +126,58 @@
 }
 
 .dark .text-valravn-600 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
-/* Alert and notification styles */
+/* Alert and notification styles - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-blue-50 {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .border-blue-200 {
   border-color: var(--raven-red) !important;
 }
 
-.dark .text-blue-800 {
-  color: var(--raven-light-red) !important;
-}
-
+.dark .text-blue-800,
 .dark .text-blue-700 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
-/* Success states */
+/* Success states - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-green-50 {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .text-green-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
-/* Error states */
+/* Error states - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-red-50 {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .text-red-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
-/* Warning states */
+/* Warning states - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-yellow-50 {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .border-yellow-200 {
   border-color: var(--raven-red) !important;
 }
 
-/* Purple theme for inventory */
+/* Purple theme for inventory - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-purple-50 {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .border-purple-200 {
@@ -178,11 +185,12 @@
 }
 
 .dark .text-purple-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .bg-purple-100 {
   background-color: var(--raven-dark-red) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 /* Smooth transitions for theme switching */
@@ -242,36 +250,37 @@ select {
   appearance: none;
 }
 
-/* Исправления всех цветов текста для темной темы */
+/* Исправления всех цветов текста для темной темы по правилу */
+/* ЧЕРНЫЙ/СЕРЫЙ ФОН = КРАСНЫЙ/БЕЛЫЙ ТЕКСТ */
 .dark .text-blue-600,
 .dark .text-blue-700,
 .dark .text-blue-800,
 .dark .text-blue-900 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
 .dark .text-green-600,
 .dark .text-green-700,
 .dark .text-green-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
 .dark .text-red-600,
 .dark .text-red-700,
 .dark .text-red-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
 .dark .text-yellow-600,
 .dark .text-yellow-700,
 .dark .text-yellow-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
 .dark .text-purple-600,
 .dark .text-purple-700,
 .dark .text-purple-800 {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
 .dark .text-gray-400 {
@@ -286,42 +295,42 @@ select {
 .dark .text-gray-700,
 .dark .text-gray-800,
 .dark .text-gray-900 {
-  color: var(--raven-very-light) !important;
+  color: var(--raven-white) !important;
 }
 
 /* Специальные цвета для ссылок и кнопок */
 .dark a {
-  color: var(--raven-light-red) !important;
+  color: var(--raven-red) !important;
 }
 
 .dark a:hover {
   color: var(--raven-white) !important;
 }
 
-/* Badge и tag стили */
+/* Badge и tag стили - КРАСНЫЙ ФОН = ЧЕРНЫЙ/СЕРЫЙ ТЕКСТ */
 .dark .bg-green-100 {
   background-color: var(--raven-dark-red) !important;
-  color: var(--raven-white) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .bg-red-100 {
   background-color: var(--raven-dark-red) !important;
-  color: var(--raven-white) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .bg-blue-100 {
   background-color: var(--raven-dark-red) !important;
-  color: var(--raven-white) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .bg-yellow-100 {
   background-color: var(--raven-dark-red) !important;
-  color: var(--raven-white) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 .dark .bg-purple-100 {
   background-color: var(--raven-dark-red) !important;
-  color: var(--raven-white) !important;
+  color: var(--raven-light-gray) !important;
 }
 
 /* Modal and overlay styles */
@@ -334,4 +343,23 @@ select {
   .dark .md\:hidden {
     background-color: var(--raven-dark-gray);
   }
+}
+
+/* Убираем фиолетовые кнопки и элементы в темной теме */
+.dark .bg-purple-600,
+.dark .bg-purple-500,
+.dark .hover\:bg-purple-700:hover,
+.dark .hover\:bg-purple-600:hover {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-black) !important;
+}
+
+.dark .text-purple-600,
+.dark .text-purple-500 {
+  color: var(--raven-red) !important;
+}
+
+.dark .border-purple-600,
+.dark .border-purple-500 {
+  border-color: var(--raven-red) !important;
 } 
