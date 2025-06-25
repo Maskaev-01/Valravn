@@ -189,29 +189,28 @@ async def vk_id_process(
 ):
     """Обработка авторизации через VK ID SDK"""
     try:
-        # Получаем JSON данные от VK ID SDK
+        # Получаем готовые данные пользователя от VK ID SDK
         data = await request.json()
         print(f"VK Data received: {data}")  # Отладка
         
-        access_token = data.get("access_token")
         user_id = str(data.get("user_id"))
+        first_name = data.get("first_name", "")
+        last_name = data.get("last_name", "")
+        photo_100 = data.get("photo_100")
         
-        if not access_token or not user_id:
-            print(f"Missing data: access_token={access_token}, user_id={user_id}")  # Отладка
-            raise HTTPException(status_code=400, detail="Нет необходимых данных от VK")
+        if not user_id:
+            print(f"Missing user_id: {user_id}")  # Отладка
+            raise HTTPException(status_code=400, detail="Нет VK user_id")
         
-        # Получаем информацию о пользователе через VK API
-        print(f"Getting user info for VK ID: {user_id}")  # Отладка
-        user_info = await vk_oauth.get_user_info_by_token(access_token, user_id)
-        print(f"VK user info: {user_info}")  # Отладка
+        print(f"Processing VK user: {user_id} - {first_name} {last_name}")  # Отладка
         
         # Создаем или обновляем пользователя
         user = create_or_update_vk_user(
             db=db,
             vk_id=user_id,
-            first_name=user_info.get("first_name", ""),
-            last_name=user_info.get("last_name", ""),
-            avatar_url=user_info.get("photo_100")
+            first_name=first_name,
+            last_name=last_name,
+            avatar_url=photo_100
         )
         print(f"User created/updated: {user.username}")  # Отладка
         

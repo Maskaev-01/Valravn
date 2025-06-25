@@ -48,6 +48,20 @@ async def home(request: Request, db: Session = Depends(get_db)):
 async def login_redirect():
     return RedirectResponse(url="/auth/login", status_code=302)
 
+# Тестовая страница для проверки роутов
+@app.get("/test-routes")
+async def test_routes():
+    return {
+        "routes": {
+            "login": "/auth/login",
+            "register": "/auth/register", 
+            "logout": "/auth/logout",
+            "vk_process": "/auth/vk/process",
+            "vk_whitelist": "/auth/admin/vk-whitelist"
+        },
+        "status": "all routes configured"
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
