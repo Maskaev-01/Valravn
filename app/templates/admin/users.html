@@ -36,6 +36,7 @@
     {% set error = request.query_params.get('error') %}
     {% set synced = request.query_params.get('synced') %}
     {% set updated = request.query_params.get('updated') %}
+    {% set warnings = request.query_params.get('warnings') %}
     
     {% if success == 'password_changed' %}
     <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
@@ -50,7 +51,7 @@
             </div>
         </div>
     </div>
-    {% elif success == 'sync_complete' %}
+    {% elif success and success.startswith('sync_complete') %}
     <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
         <div class="flex">
             <div class="flex-shrink-0">
@@ -67,6 +68,9 @@
                     {% endif %}
                     {% if (not synced or synced == '0') and (not updated or updated == '0') %}
                         Все данные уже синхронизированы.
+                    {% endif %}
+                    {% if warnings and warnings != '0' %}
+                        <br><span class="text-yellow-600">⚠️ Обнаружено {{ warnings }} предупреждений при синхронизации.</span>
                     {% endif %}
                 </p>
             </div>

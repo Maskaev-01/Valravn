@@ -192,40 +192,72 @@ async def sync_vk_users(
 ):
     """Синхронизирует данные между таблицами vk_whitelist и users"""
     try:
-        # Получаем всех пользователей из whitelist, которых нет в users
+        # Получаем всех пользователей из whitelist
         whitelist_entries = db.query(VKWhitelist).all()
         synced_count = 0
         updated_count = 0
+        errors = []
         
         for entry in whitelist_entries:
-            # Ищем пользователя в таблице users
-            user = db.query(User).filter(User.vk_id == entry.vk_id).first()
-            
-            if user:
-                # Обновляем существующего пользователя
-                if not user.is_whitelisted:
-                    user.is_whitelisted = True
-                    user.is_admin = 1 if entry.is_admin else 0
-                    updated_count += 1
-            else:
-                # Создаем нового пользователя
-                username = f"vk_{entry.vk_id}"
-                new_user = User(
-                    username=username,
-                    vk_id=entry.vk_id,
-                    first_name=entry.username.split()[0] if entry.username.split() else "VK",
-                    last_name=" ".join(entry.username.split()[1:]) if len(entry.username.split()) > 1 else "User",
-                    is_admin=1 if entry.is_admin else 0,
-                    is_whitelisted=True,
-                    hashed_password=None
-                )
-                db.add(new_user)
-                synced_count += 1
+            try:
+                # Сначала ищем пользователя по vk_id
+                user = db.query(User).filter(User.vk_id == entry.vk_id).first()
+                
+                if user:
+                    # Пользователь найден по vk_id - обновляем флаги
+                    if not user.is_whitelisted or user.is_admin != (1 if entry.is_admin else 0):
+                        user.is_whitelisted = True
+                        user.is_admin = 1 if entry.is_admin else 0
+                        updated_count += 1
+                else:
+                    # Пользователь не найден по vk_id
+                    # Проверяем, нет ли уже пользователя с таким username
+                    username = f"vk_{entry.vk_id}"
+                    existing_user = db.query(User).filter(User.username == username).first()
+                    
+                    if existing_user:
+                        # Пользователь с таким username уже есть - обновляем его vk_id
+                        if not existing_user.vk_id:
+                            existing_user.vk_id = entry.vk_id
+                            existing_user.first_name = entry.username.split()[0] if entry.username.split() else "VK"
+                            existing_user.last_name = " ".join(entry.username.split()[1:]) if len(entry.username.split()) > 1 else "User"
+                            existing_user.is_whitelisted = True
+                            existing_user.is_admin = 1 if entry.is_admin else 0
+                            updated_count += 1
+                        else:
+                            # У пользователя уже есть другой vk_id - пропускаем
+                            errors.append(f"Пользователь {username} уже имеет VK ID {existing_user.vk_id}")
+                            continue
+                    else:
+                        # Создаем нового пользователя
+                        new_user = User(
+                            username=username,
+                            vk_id=entry.vk_id,
+                            first_name=entry.username.split()[0] if entry.username.split() else "VK",
+                            last_name=" ".join(entry.username.split()[1:]) if len(entry.username.split()) > 1 else "User",
+                            is_admin=1 if entry.is_admin else 0,
+                            is_whitelisted=True,
+                            hashed_password=None,  # Explicitly set to None for VK users
+                            email=None
+                        )
+                        db.add(new_user)
+                        synced_count += 1
+                        
+            except Exception as e:
+                errors.append(f"Ошибка для VK ID {entry.vk_id}: {str(e)}")
+                continue
         
+        # Коммитим все изменения
         db.commit()
         
+        # Формируем сообщение о результате
+        success_message = f"sync_complete&synced={synced_count}&updated={updated_count}"
+        if errors:
+            error_message = "; ".join(errors[:3])  # Показываем только первые 3 ошибки
+            success_message += f"&warnings={len(errors)}"
+            
         return RedirectResponse(
-            url=f"/admin/users?success=sync_complete&synced={synced_count}&updated={updated_count}", 
+            url=f"/admin/users?success={success_message}", 
             status_code=302
         )
         
