@@ -9,11 +9,13 @@
 - Добавлен редирект в `main.py` для старых ссылок
 
 ### 2. 🎯 **VK авторизация работает частично**
-**Проблема:** Пользователь входил, но имена не заполнялись
+**Проблема:** Пользователь входил, но имена не заполнялись + ошибка IP адреса
 **Решение:**
-- Восстановлен серверный вызов VK API для получения данных пользователя
-- Добавлены заголовки User-Agent для обхода IP ограничений
-- Улучшена обработка ошибок с детальным логированием
+- **КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ**: Перенос получения данных на клиентскую сторону
+- VK API блокирует токены при смене IP (сервер ≠ клиент)
+- Теперь `VKID.Api.call()` выполняется в браузере пользователя
+- Сервер получает готовые данные: `{user_id, first_name, last_name, photo_100}`
+- Убрана серверная часть VK API (больше не нужна)
 
 ### 3. 📝 **Регистрация не работала**
 **Проблема:** Неправильные пути в форме и стилях
@@ -50,21 +52,46 @@
 - ✅ `/login` → редирект на `/auth/login`
 
 ### VK OAuth исправления:
-```python
-# Добавлены заголовки для обхода IP ограничений
-headers = {
-    "User-Agent": "VKAndroidApp/7.45-13627 (Android 11; SDK 30; arm64-v8a; samsung SM-G991B; ru; 2340x1080)"
-}
+```javascript
+// НОВЫЙ подход: получение данных на клиентской стороне
+VKID.Auth.exchangeCode(code, deviceId)
+    .then(function(data) {
+        // Получаем данные пользователя через клиентский VK API
+        VKID.Api.call('users.get', {
+            user_ids: data.user_id,
+            fields: 'photo_100,first_name,last_name'
+        }, data.access_token)
+        .then(function(apiResponse) {
+            const userInfo = apiResponse.response[0];
+            
+            // Отправляем готовые данные на сервер
+            fetch('/auth/vk/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: data.user_id,
+                    first_name: userInfo.first_name,
+                    last_name: userInfo.last_name,
+                    photo_100: userInfo.photo_100
+                })
+            })
+        })
+    });
+```
 
-# Улучшена обработка ошибок
-try:
-    response = await client.get(f"{self.api_url}/users.get", params=params)
-    data = response.json()
-    if "error" in data:
-        error_msg = data['error'].get('error_msg', 'Unknown VK API error')
-        raise HTTPException(status_code=400, detail=f"VK API error: {error_msg}")
-except httpx.TimeoutException:
-    raise HTTPException(status_code=400, detail="VK API timeout")
+```python
+# Серверная обработка готовых данных (без VK API вызовов)
+@router.post("/vk/process")
+async def vk_id_process(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    
+    user_id = str(data.get("user_id"))
+    first_name = data.get("first_name", "")
+    last_name = data.get("last_name", "")
+    photo_100 = data.get("photo_100")
+    
+    # Проверяем whitelist и создаем пользователя
+    user = create_or_update_vk_user(db, user_id, first_name, last_name, photo_100)
 ```
 
 ### Whitelist логика:
@@ -85,15 +112,19 @@ def create_or_update_vk_user(db: Session, vk_id: str, first_name: str, last_name
 ## 🎯 **Ожидаемые логи успешной VK авторизации:**
 
 ```
-VK Data received: {'access_token': 'vk2.a...', 'user_id': 333262027, 'expires_in': 3600}
-Getting user info for VK ID: 333262027
-VK API response: {'response': [{'id': 333262027, 'first_name': 'Владимир', 'last_name': 'Маскаев', 'photo_100': '...'}]}
-VK user info received: {'id': 333262027, 'first_name': 'Владимир', 'last_name': 'Маскаев', 'photo_100': '...'}
+VK Data received: {'user_id': 333262027, 'first_name': 'Владимир', 'last_name': 'Маскаев', 'photo_100': 'https://...'}
 Processing VK user: 333262027 - Владимир Маскаев
-User created/updated: Владимир
+User created/updated: vk_333262027
 INFO: "POST /auth/vk/process HTTP/1.1" 200 OK
 INFO: "GET /dashboard HTTP/1.1" 200 OK
 ```
+
+**🚫 Больше НЕТ логов:**
+- `Getting user info for VK ID: ...` 
+- `VK API response: ...`
+- `VK API error: ...`
+
+**✅ Данные теперь получаются на клиентской стороне!**
 
 ---
 

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VK ID Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-6">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-gray-900">Тест VK ID SDK</h1>
+            <p class="mt-2 text-sm text-gray-600">Проверка получения данных пользователя</p>
+        </div>
+        
+        <!-- VK ID Widget -->
+        <div id="vk-auth-container" class="flex justify-center"></div>
+        
+        <!-- Результат -->
+        <div id="result" class="hidden bg-white p-4 rounded-lg shadow border">
+            <h3 class="font-semibold text-green-600 mb-2">✅ Данные получены:</h3>
+            <pre id="user-data" class="text-sm bg-gray-100 p-2 rounded overflow-x-auto"></pre>
+        </div>
+        
+        <!-- Ошибка -->
+        <div id="error" class="hidden bg-red-50 border border-red-200 rounded p-4">
+            <h3 class="font-semibold text-red-600 mb-2">❌ Ошибка:</h3>
+            <p id="error-text" class="text-sm text-red-700"></p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
+    <script>
+        if ('VKIDSDK' in window) {
+            const VKID = window.VKIDSDK;
+
+            VKID.Config.init({
+                app: 53804218,
+                redirectUrl: 'https://valravn-budget.onrender.com/login',
+                responseMode: VKID.ConfigResponseMode.Callback,
+                source: VKID.ConfigSource.LOWCODE,
+                scope: '',
+            });
+
+            const oneTap = new VKID.OneTap();
+
+            oneTap.render({
+                container: document.getElementById('vk-auth-container'),
+                showAlternativeLogin: false
+            })
+            .on(VKID.WidgetEvents.ERROR, vkidOnError)
+            .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+                const code = payload.code;
+                const deviceId = payload.device_id;
+
+                VKID.Auth.exchangeCode(code, deviceId)
+                    .then(function(data) {
+                        console.log('VK Auth Data:', data);
+                        
+                        // Получаем данные пользователя
+                        VKID.Api.call('users.get', {
+                            user_ids: data.user_id,
+                            fields: 'photo_100,first_name,last_name'
+                        }, data.access_token)
+                        .then(function(apiResponse) {
+                            console.log('VK API Response:', apiResponse);
+                            
+                            if (apiResponse.response && apiResponse.response[0]) {
+                                const userInfo = apiResponse.response[0];
+                                
+                                const userData = {
+                                    user_id: data.user_id,
+                                    first_name: userInfo.first_name,
+                                    last_name: userInfo.last_name,
+                                    photo_100: userInfo.photo_100
+                                };
+                                
+                                // Показываем результат
+                                document.getElementById('result').classList.remove('hidden');
+                                document.getElementById('user-data').textContent = JSON.stringify(userData, null, 2);
+                                document.getElementById('error').classList.add('hidden');
+                                
+                                console.log('✅ Готовые данные для сервера:', userData);
+                            } else {
+                                vkidOnError('Нет данных пользователя в ответе VK API');
+                            }
+                        })
+                        .catch(vkidOnError);
+                    })
+                    .catch(vkidOnError);
+            });
+        
+            function vkidOnError(error) {
+                console.error('VK ID Error:', error);
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('error-text').textContent = error.message || error;
+                document.getElementById('result').classList.add('hidden');
+            }
+        } else {
+            document.getElementById('error').classList.remove('hidden');
+            document.getElementById('error-text').textContent = 'VK ID SDK не загружен';
+        }
+    </script>
+</body>
+</html> 
