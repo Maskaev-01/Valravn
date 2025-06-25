@@ -318,7 +318,7 @@ async def vk_id_process(
         raise HTTPException(status_code=400, detail=f"Ошибка VK авторизации: {str(e)}")
 
 @router.get("/profile", response_class=HTMLResponse)
-async def profile(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def profile(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     """Профиль пользователя с возможностью связывания аккаунтов"""
     
     # Ищем возможные дубликаты для этого пользователя
@@ -382,7 +382,7 @@ async def profile(request: Request, current_user: User = Depends(get_current_use
 async def request_account_link(
     request: Request,
     target_user_id: int = Form(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_cookie),
     db: Session = Depends(get_db)
 ):
     """Запрос на связывание аккаунтов"""
@@ -420,7 +420,7 @@ async def confirm_account_link(
     request: Request,
     request_id: int = Form(...),
     action: str = Form(...),  # 'approve' или 'reject'
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_cookie),
     db: Session = Depends(get_db)
 ):
     """Подтверждение или отклонение запроса на связывание"""
