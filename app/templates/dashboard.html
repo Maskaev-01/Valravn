@@ -15,6 +15,28 @@
         </p>
     </div>
 
+    <!-- Уведомления для админов -->
+    {% if user.is_admin and pending_count and pending_count > 0 %}
+    <div class="bg-yellow-50 border border-yellow-200 dark:bg-yellow-900 dark:border-yellow-700 rounded-md p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    Требуется внимание администратора!
+                </h3>
+                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                    <p>{{ pending_count }} взносов ожидают вашей модерации. 
+                    <a href="/moderation" class="font-medium underline hover:text-yellow-900 dark:hover:text-yellow-100">
+                        Перейти к модерации →
+                    </a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <!-- Total Income -->
@@ -94,7 +116,7 @@
                 <i class="fas fa-bolt mr-2 text-yellow-500 dark:text-yellow-400"></i>
                 Быстрые действия
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-{{ '5' if user.is_admin else '4' }} gap-4">
                 <a href="/add-contribution" 
                    class="bg-valravn-50 hover:bg-valravn-100 dark:bg-raven-900 dark:hover:bg-raven-800 border border-valravn-200 dark:border-raven-700 rounded-lg p-4 text-center transition-colors group">
                     <i class="fas fa-plus-circle text-2xl text-valravn-600 dark:text-raven-400 mb-2 group-hover:text-valravn-700 dark:group-hover:text-raven-300"></i>
@@ -113,7 +135,31 @@
                     <div class="text-sm font-medium text-green-700 dark:text-green-300">Участники</div>
                 </a>
                 
+                <a href="/inventory" 
+                   class="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-800 border border-purple-200 dark:border-purple-700 rounded-lg p-4 text-center transition-colors group">
+                    <i class="fas fa-box text-2xl text-purple-600 dark:text-purple-400 mb-2 group-hover:text-purple-700 dark:group-hover:text-purple-300"></i>
+                    <div class="text-sm font-medium text-purple-700 dark:text-purple-300">Инвентарь</div>
+                </a>
+                
                 {% if user.is_admin %}
+                <!-- НОВАЯ ССЫЛКА: Модерация для админов -->
+                <a href="/moderation" 
+                   class="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900 dark:hover:bg-yellow-800 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 text-center transition-colors group relative">
+                    <i class="fas fa-gavel text-2xl text-yellow-600 dark:text-yellow-400 mb-2 group-hover:text-yellow-700 dark:group-hover:text-yellow-300"></i>
+                    <div class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Модерация</div>
+                    {% if pending_count and pending_count > 0 %}
+                    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {{ pending_count }}
+                    </span>
+                    {% endif %}
+                </a>
+                
+                <a href="/admin" 
+                   class="bg-red-50 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 rounded-lg p-4 text-center transition-colors group">
+                    <i class="fas fa-cogs text-2xl text-red-600 dark:text-red-400 mb-2 group-hover:text-red-700 dark:group-hover:text-red-300"></i>
+                    <div class="text-sm font-medium text-red-700 dark:text-red-300">Админ панель</div>
+                </a>
+                {% else %}
                 <a href="/admin" 
                    class="bg-red-50 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 rounded-lg p-4 text-center transition-colors group">
                     <i class="fas fa-cogs text-2xl text-red-600 dark:text-red-400 mb-2 group-hover:text-red-700 dark:group-hover:text-red-300"></i>

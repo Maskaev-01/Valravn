@@ -18,6 +18,9 @@ async def admin_dashboard(request: Request, admin_user: User = Depends(get_admin
     budget_entries_count = db.query(Budget).count()
     inventory_count = db.query(Inventory).count()
     
+    # НОВОЕ: Счетчик ожидающих модерации
+    pending_moderation_count = db.query(Budget).filter(Budget.is_approved == False).count()
+    
     # Последние записи
     recent_budget = db.query(Budget).order_by(Budget.id.desc()).limit(5).all()
     
@@ -27,6 +30,7 @@ async def admin_dashboard(request: Request, admin_user: User = Depends(get_admin
         "users_count": users_count,
         "budget_entries_count": budget_entries_count,
         "inventory_count": inventory_count,
+        "pending_moderation_count": pending_moderation_count,  # НОВОЕ
         "recent_budget": recent_budget
     })
 
