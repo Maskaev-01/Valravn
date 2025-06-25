@@ -53,6 +53,11 @@ async def login_redirect():
 async def logout_redirect():
     return RedirectResponse(url="/auth/logout", status_code=302)
 
+# Редирект для старой ссылки VK whitelist
+@app.get("/admin/vk-whitelist")
+async def vk_whitelist_redirect():
+    return RedirectResponse(url="/auth/admin/vk-whitelist", status_code=302)
+
 # Тестовая страница для проверки роутов
 @app.get("/test-routes")
 async def test_routes():

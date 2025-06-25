@@ -22,10 +22,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    # Получаем URL для авторизации через VK если OAuth настроен
-    vk_auth_url = None
-    if vk_oauth.is_configured():
-        vk_auth_url = True  # Теперь используем VK ID SDK, не URL
+    # VK ID SDK всегда доступен (работает на клиентской стороне)
+    vk_auth_url = True
     
     return templates.TemplateResponse("login.html", {
         "request": request,
@@ -48,7 +46,7 @@ async def login_for_access_token(
         return templates.TemplateResponse("login.html", {
             "request": request, 
             "error": "Неверное имя пользователя или пароль",
-            "vk_auth_url": True if vk_oauth.is_configured() else None  # Только флаг для VK ID SDK
+            "vk_auth_url": True  # VK ID SDK всегда доступен
         })
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
