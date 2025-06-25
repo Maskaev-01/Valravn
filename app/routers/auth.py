@@ -1,6 +1,6 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Form, Request, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -25,7 +25,7 @@ async def login_page(request: Request):
     # Получаем URL для авторизации через VK если OAuth настроен
     vk_auth_url = None
     if vk_oauth.is_configured():
-        vk_auth_url = vk_oauth.get_auth_url()
+        vk_auth_url = True  # Теперь используем VK ID SDK, не URL
     
     return templates.TemplateResponse("login.html", {
         "request": request,
@@ -47,7 +47,7 @@ async def login_for_access_token(
     if not user:
         vk_auth_url = None
         if vk_oauth.is_configured():
-            vk_auth_url = vk_oauth.get_auth_url()
+            vk_auth_url = True  # Теперь используем VK ID SDK, не URL
         
         return templates.TemplateResponse("login.html", {
             "request": request, 
@@ -244,4 +244,46 @@ async def remove_from_vk_whitelist(
 async def logout():
     response = RedirectResponse(url="/login", status_code=302)
     response.delete_cookie(key="access_token")
-    return response 
+    return response
+
+# НОВЫЙ роут для VK ID авторизации
+@router.post("/vk/process")
+async def vk_id_process(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Обработка авторизации через VK ID SDK"""
+    try:
+        # Получаем JSON данные от VK ID SDK
+        data = await request.json()
+        access_token = data.get("access_token")
+        user_id = str(data.get("user_id"))
+        
+        if not access_token or not user_id:
+            raise HTTPException(status_code=400, detail="Нет необходимых данных от VK")
+        
+        # Получаем информацию о пользователе через VK API
+        user_info = await vk_oauth.get_user_info_by_token(access_token, user_id)
+        
+        # Создаем или обновляем пользователя
+        user = create_or_update_vk_user(
+            db=db,
+            vk_id=user_id,
+            first_name=user_info.get("first_name", ""),
+            last_name=user_info.get("last_name", ""),
+            avatar_url=user_info.get("photo_100")
+        )
+        
+        # Создаем JWT токен
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        jwt_token = create_access_token(
+            data={"sub": user.username}, expires_delta=access_token_expires
+        )
+        
+        # Возвращаем успешный ответ (без redirect, так как это AJAX)
+        response = JSONResponse({"status": "success", "redirect": "/dashboard"})
+        response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
+        return response
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Ошибка VK авторизации: {str(e)}") 

@@ -3,102 +3,149 @@
 {% block title %}Вход - Valravn{% endblock %}
 
 {% block content %}
-<div class="flex-1 flex items-center justify-center">
-    <div class="max-w-md w-full space-y-8 px-4">
+<div class="flex items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
         <div>
-            <div class="text-center">
-                <i class="fas fa-raven text-6xl text-valravn-600 mb-4"></i>
-                <h2 class="text-3xl font-extrabold text-gray-900">Valravn</h2>
-                <p class="mt-2 text-sm text-gray-600">Система управления бюджетом клуба</p>
+            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-100">
+                <i class="fas fa-raven text-red-600 text-xl"></i>
             </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Вход в Valravn
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Система управления бюджетом и инвентарём
+            </p>
         </div>
         
-        <div class="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
-            {% if vk_auth_url %}
-            <!-- VK OAuth кнопка -->
-            <div class="mb-6">
-                <a href="{{ vk_auth_url }}" 
-                   class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zM20.52 15.684c0 2.684-.816 3.5-3.5 3.5H6.98c-2.684 0-3.5-.816-3.5-3.5V8.316c0-2.684.816-3.5 3.5-3.5h10.04c2.684 0 3.5.816 3.5 3.5v7.368z"/>
-                        <path d="M18.947 9.684c-.211-.158-.421-.263-.632-.316-.105-.026-.211-.053-.316-.053-.579 0-1.105.211-1.579.632-.421.368-.789.842-1.105 1.421-.316-.579-.684-1.053-1.105-1.421-.474-.421-1-.632-1.579-.632-.105 0-.211.027-.316.053-.211.053-.421.158-.632.316-.526.421-.789 1-.789 1.737 0 .474.132.947.395 1.421.368.631.842 1.184 1.421 1.658.316.263.684.474 1.105.632.421.158.842.237 1.263.237s.842-.079 1.263-.237c.421-.158.789-.369 1.105-.632.579-.474 1.053-1.027 1.421-1.658.263-.474.395-.947.395-1.421 0-.737-.263-1.316-.789-1.737z"/>
-                    </svg>
-                    Войти через ВКонтакте
-                </a>
-                
-                <div class="mt-4 relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
+        <!-- VK ID Авторизация -->
+        {% if vk_auth_url %}
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <div class="text-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Быстрый вход</h3>
+                <p class="text-sm text-gray-600">Авторизация через VK ID</p>
+            </div>
+            
+            <!-- VK ID OneTap Widget -->
+            <div id="vk-auth-container" class="flex justify-center">
+                <script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
+                <script type="text/javascript">
+                    if ('VKIDSDK' in window) {
+                        const VKID = window.VKIDSDK;
+
+                        VKID.Config.init({
+                            app: 53804218,
+                            redirectUrl: 'https://valravn-budget.onrender.com/auth/login',
+                            responseMode: VKID.ConfigResponseMode.Callback,
+                            source: VKID.ConfigSource.LOWCODE,
+                            scope: '',
+                        });
+
+                        const oneTap = new VKID.OneTap();
+
+                        oneTap.render({
+                            container: document.getElementById('vk-auth-container'),
+                            showAlternativeLogin: false
+                        })
+                        .on(VKID.WidgetEvents.ERROR, vkidOnError)
+                        .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+                            const code = payload.code;
+                            const deviceId = payload.device_id;
+
+                            VKID.Auth.exchangeCode(code, deviceId)
+                                .then(vkidOnSuccess)
+                                .catch(vkidOnError);
+                        });
+                    
+                        function vkidOnSuccess(data) {
+                            // Отправляем данные на сервер для обработки
+                            fetch('/auth/vk/process', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    access_token: data.access_token,
+                                    user_id: data.user_id,
+                                    expires_in: data.expires_in
+                                })
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    window.location.href = '/dashboard';
+                                } else {
+                                    vkidOnError('Ошибка сервера');
+                                }
+                            })
+                            .catch(vkidOnError);
+                        }
+                    
+                        function vkidOnError(error) {
+                            console.error('VK ID Error:', error);
+                            document.getElementById('vk-error').style.display = 'block';
+                            document.getElementById('vk-error').textContent = 'Ошибка VK авторизации: ' + (error.message || error);
+                        }
+                    }
+                </script>
+            </div>
+            
+            <div id="vk-error" style="display: none;" class="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm"></div>
+        </div>
+        
+        <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300" />
+            </div>
+            <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-gray-50 text-gray-500">или</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Обычная форма входа -->
+        <form class="mt-8 space-y-6" method="post" action="/auth/login">
+            {% if error %}
+            <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
                     </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">или</span>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">{{ error }}</p>
                     </div>
                 </div>
             </div>
             {% endif %}
-            
-            <form class="space-y-6" method="post" action="/login">
+
+            <div class="rounded-md shadow-sm -space-y-px">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700">
-                        Имя пользователя
-                    </label>
-                    <div class="mt-1 relative">
-                        <input id="username" name="username" type="text" required 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 focus:z-10 sm:text-sm"
-                               placeholder="Введите имя пользователя">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <i class="fas fa-user text-gray-400"></i>
-                        </div>
-                    </div>
+                    <label for="username" class="sr-only">Имя пользователя</label>
+                    <input id="username" name="username" type="text" required 
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm" 
+                           placeholder="Имя пользователя">
                 </div>
-
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">
-                        Пароль
-                    </label>
-                    <div class="mt-1 relative">
-                        <input id="password" name="password" type="password" required 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 focus:z-10 sm:text-sm"
-                               placeholder="Введите пароль">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <i class="fas fa-lock text-gray-400"></i>
-                        </div>
-                    </div>
+                    <label for="password" class="sr-only">Пароль</label>
+                    <input id="password" name="password" type="password" required 
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm" 
+                           placeholder="Пароль">
                 </div>
+            </div>
 
-                {% if error %}
-                <div class="bg-red-50 border border-red-200 rounded-md p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-exclamation-circle text-red-400"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-red-800">{{ error }}</p>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <i class="fas fa-lock text-red-500 group-hover:text-red-400"></i>
+                    </span>
+                    Войти
+                </button>
+            </div>
 
-                <div>
-                    <button type="submit" 
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-valravn-600 hover:bg-valravn-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-valravn-500 transition-colors">
-                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="fas fa-sign-in-alt text-valravn-500 group-hover:text-valravn-400"></i>
-                        </span>
-                        Войти
-                    </button>
-                </div>
-
-                <div class="text-center">
-                    <p class="text-sm text-gray-600">
-                        Нет аккаунта? 
-                        <a href="/register" class="font-medium text-valravn-600 hover:text-valravn-500 transition-colors">
-                            Зарегистрироваться
-                        </a>
-                    </p>
-                </div>
-            </form>
-        </div>
+            <div class="text-center">
+                <a href="/auth/register" class="font-medium text-red-600 hover:text-red-500">
+                    Нет аккаунта? Зарегистрируйтесь
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %} 
