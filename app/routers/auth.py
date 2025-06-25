@@ -17,7 +17,7 @@ from app.auth import (
 )
 from app.vk_oauth import vk_oauth
 
-router = APIRouter()
+router = APIRouter(prefix="/auth")
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/login", response_class=HTMLResponse)
@@ -177,7 +177,7 @@ async def remove_from_vk_whitelist(
 
 @router.get("/logout")
 async def logout():
-    response = RedirectResponse(url="/login", status_code=302)
+    response = RedirectResponse(url="/auth/login", status_code=302)
     response.delete_cookie(key="access_token")
     return response
 
@@ -191,14 +191,19 @@ async def vk_id_process(
     try:
         # Получаем JSON данные от VK ID SDK
         data = await request.json()
+        print(f"VK Data received: {data}")  # Отладка
+        
         access_token = data.get("access_token")
         user_id = str(data.get("user_id"))
         
         if not access_token or not user_id:
+            print(f"Missing data: access_token={access_token}, user_id={user_id}")  # Отладка
             raise HTTPException(status_code=400, detail="Нет необходимых данных от VK")
         
         # Получаем информацию о пользователе через VK API
+        print(f"Getting user info for VK ID: {user_id}")  # Отладка
         user_info = await vk_oauth.get_user_info_by_token(access_token, user_id)
+        print(f"VK user info: {user_info}")  # Отладка
         
         # Создаем или обновляем пользователя
         user = create_or_update_vk_user(
@@ -208,6 +213,7 @@ async def vk_id_process(
             last_name=user_info.get("last_name", ""),
             avatar_url=user_info.get("photo_100")
         )
+        print(f"User created/updated: {user.username}")  # Отладка
         
         # Создаем JWT токен
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -221,4 +227,5 @@ async def vk_id_process(
         return response
         
     except Exception as e:
+        print(f"VK Auth Error: {str(e)}")  # Отладка
         raise HTTPException(status_code=400, detail=f"Ошибка VK авторизации: {str(e)}") 
