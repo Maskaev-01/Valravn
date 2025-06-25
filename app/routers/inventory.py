@@ -23,10 +23,18 @@ def can_edit_inventory(current_user: User, item: Inventory) -> bool:
     if item.created_by_user_id == current_user.id:
         return True
     
-    # Если предмет создан до внедрения системы прав (нет created_by_user_id)
-    # Разрешаем редактировать всем до миграции данных
+    # Для старых записей без created_by_user_id проверяем по имени владельца
+    # Только если имя пользователя совпадает с owner в записи
     if item.created_by_user_id is None:
-        return True
+        # Для VK пользователей проверяем полное имя
+        if current_user.vk_id:
+            user_full_name = f"{current_user.first_name} {current_user.last_name}".strip()
+            if user_full_name and item.owner == user_full_name:
+                return True
+        
+        # Для обычных пользователей проверяем username
+        if item.owner == current_user.username:
+            return True
     
     return False
 

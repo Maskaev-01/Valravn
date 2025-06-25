@@ -41,20 +41,42 @@
         </div>
         {% endif %}
 
-        <form method="post" action="/auth/admin/vk-whitelist/add" class="space-y-4">
+        <form method="post" action="/auth/admin/vk-whitelist/add" class="space-y-4" id="whitelist-form">
             <div class="grid md:grid-cols-3 gap-4">
                 <div>
-                    <label for="vk_id" class="block text-sm font-medium text-gray-700">VK ID</label>
-                    <input type="text" id="vk_id" name="vk_id" required
-                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500"
-                           placeholder="Например: 12345678">
+                    <label for="vk_id" class="block text-sm font-medium text-gray-700">VK ID или псевдоним</label>
+                    <div class="flex">
+                        <input type="text" id="vk_id" name="vk_id" required
+                               class="mt-1 block w-full border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500"
+                               placeholder="12345678 или username">
+                        {% if has_vk_service_token %}
+                        <button type="button" id="fetch-user-btn" 
+                                class="mt-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-r-md border border-blue-500 focus:outline-none"
+                                title="Получить данные из VK">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Числовой ID (12345678) или псевдоним (username)
+                    </p>
                 </div>
                 
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700">Имя пользователя</label>
-                    <input type="text" id="username" name="username" required
+                    <label for="username" class="block text-sm font-medium text-gray-700">
+                        Имя пользователя
+                        {% if has_vk_service_token %}
+                        <span class="text-gray-400">(опционально)</span>
+                        {% endif %}
+                    </label>
+                    <input type="text" id="username" name="username" 
                            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500"
                            placeholder="Имя Фамилия">
+                    {% if has_vk_service_token %}
+                    <p class="mt-1 text-sm text-gray-500">
+                        Если не указано, будет получено из VK автоматически
+                    </p>
+                    {% endif %}
                 </div>
                 
                 <div class="flex items-end">
@@ -64,6 +86,14 @@
                     </label>
                 </div>
             </div>
+            
+            <!-- Информация о пользователе (скрыта по умолчанию) -->
+            {% if has_vk_service_token %}
+            <div id="user-info" class="hidden bg-blue-50 border border-blue-200 rounded-md p-4">
+                <h4 class="text-sm font-medium text-blue-800 mb-2">Информация о пользователе:</h4>
+                <div id="user-details" class="text-sm text-blue-700"></div>
+            </div>
+            {% endif %}
             
             <div>
                 <button type="submit" class="bg-valravn-600 hover:bg-valravn-700 text-white font-bold py-2 px-4 rounded">
@@ -148,10 +178,80 @@
                     <p>1. Откройте профиль пользователя ВКонтакте</p>
                     <p>2. В адресной строке будет ссылка вида: vk.com/id12345678 или vk.com/username</p>
                     <p>3. Если в ссылке есть id12345678 - используйте эти цифры</p>
-                    <p>4. Если ссылка содержит username, нужно узнать числовой ID через специальные сервисы</p>
+                    <p>4. Если ссылка содержит username, можно использовать его напрямую{% if has_vk_service_token %} - система автоматически найдет ID{% endif %}</p>
+                    {% if has_vk_service_token %}
+                    <p>5. Используйте кнопку поиска для автоматического получения данных пользователя</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+{% if has_vk_service_token %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fetchBtn = document.getElementById('fetch-user-btn');
+    const vkIdInput = document.getElementById('vk_id');
+    const usernameInput = document.getElementById('username');
+    const userInfo = document.getElementById('user-info');
+    const userDetails = document.getElementById('user-details');
+    
+    fetchBtn.addEventListener('click', async function() {
+        const vkId = vkIdInput.value.trim();
+        if (!vkId) {
+            alert('Введите VK ID или псевдоним');
+            return;
+        }
+        
+        // Показываем индикатор загрузки
+        fetchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        fetchBtn.disabled = true;
+        
+        try {
+            const response = await fetch(`/auth/api/vk-user-info?user_id=${encodeURIComponent(vkId)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const user = data.user;
+                
+                // Заполняем поля формы
+                vkIdInput.value = user.vk_id;
+                usernameInput.value = user.full_name;
+                
+                // Показываем информацию о пользователе
+                userDetails.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        ${user.photo_100 ? `<img src="${user.photo_100}" alt="Avatar" class="w-10 h-10 rounded-full">` : ''}
+                        <div>
+                            <p><strong>Имя:</strong> ${user.first_name} ${user.last_name}</p>
+                            <p><strong>ID:</strong> ${user.vk_id}</p>
+                            ${user.screen_name ? `<p><strong>Псевдоним:</strong> ${user.screen_name}</p>` : ''}
+                            ${user.is_closed ? '<p class="text-yellow-600"><i class="fas fa-lock mr-1"></i>Закрытый профиль</p>' : ''}
+                        </div>
+                    </div>
+                `;
+                userInfo.classList.remove('hidden');
+            } else {
+                alert(`Ошибка: ${data.error}`);
+                userInfo.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+            alert('Произошла ошибка при получении данных пользователя');
+            userInfo.classList.add('hidden');
+        } finally {
+            // Восстанавливаем кнопку
+            fetchBtn.innerHTML = '<i class="fas fa-search"></i>';
+            fetchBtn.disabled = false;
+        }
+    });
+    
+    // Скрываем информацию о пользователе при изменении ID
+    vkIdInput.addEventListener('input', function() {
+        userInfo.classList.add('hidden');
+    });
+});
+</script>
+{% endif %}
 {% endblock %} 

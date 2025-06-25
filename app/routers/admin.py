@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import date
 from app.database import get_db
-from app.models.models import Budget, User, Inventory
+from app.models.models import Budget, User, Inventory, VKWhitelist
 from app.auth import get_admin_user, get_password_hash
 
 router = APIRouter()
@@ -181,4 +181,56 @@ async def admin_reset_password(
     user_to_update.hashed_password = get_password_hash(new_password)
     db.commit()
     
-    return RedirectResponse(url="/admin/users?success=password_changed", status_code=302) 
+    return RedirectResponse(url="/admin/users?success=password_changed", status_code=302)
+
+# Новый роут для синхронизации данных VK пользователей
+@router.post("/admin/sync-vk-users")
+async def sync_vk_users(
+    request: Request,
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Синхронизирует данные между таблицами vk_whitelist и users"""
+    try:
+        # Получаем всех пользователей из whitelist, которых нет в users
+        whitelist_entries = db.query(VKWhitelist).all()
+        synced_count = 0
+        updated_count = 0
+        
+        for entry in whitelist_entries:
+            # Ищем пользователя в таблице users
+            user = db.query(User).filter(User.vk_id == entry.vk_id).first()
+            
+            if user:
+                # Обновляем существующего пользователя
+                if not user.is_whitelisted:
+                    user.is_whitelisted = True
+                    user.is_admin = 1 if entry.is_admin else 0
+                    updated_count += 1
+            else:
+                # Создаем нового пользователя
+                username = f"vk_{entry.vk_id}"
+                new_user = User(
+                    username=username,
+                    vk_id=entry.vk_id,
+                    first_name=entry.username.split()[0] if entry.username.split() else "VK",
+                    last_name=" ".join(entry.username.split()[1:]) if len(entry.username.split()) > 1 else "User",
+                    is_admin=1 if entry.is_admin else 0,
+                    is_whitelisted=True,
+                    hashed_password=None
+                )
+                db.add(new_user)
+                synced_count += 1
+        
+        db.commit()
+        
+        return RedirectResponse(
+            url=f"/admin/users?success=sync_complete&synced={synced_count}&updated={updated_count}", 
+            status_code=302
+        )
+        
+    except Exception as e:
+        return RedirectResponse(
+            url=f"/admin/users?error=sync_failed&message={str(e)}", 
+            status_code=302
+        ) 
