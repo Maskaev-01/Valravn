@@ -238,7 +238,7 @@ async def remove_from_vk_whitelist(
         db.delete(whitelist_entry)
         db.commit()
     
-    return RedirectResponse(url="/auth/admin/vk-whitelist", status_code=302)
+    return RedirectResponse(url="/admin/vk-whitelist", status_code=302)
 
 @router.get("/logout")
 async def logout():

@@ -39,7 +39,7 @@ async def inventory_list(
     item_type: Optional[str] = Query(None),
     material: Optional[str] = Query(None),  # Новый фильтр по материалу
     search: Optional[str] = Query(None),
-    club_items: Optional[bool] = Query(None)  # Фильтр клубных предметов
+    club_items: Optional[str] = Query(None)  # Изменяем тип на str для корректной обработки
 ):
     # Базовый запрос
     query = db.query(Inventory)
@@ -51,8 +51,15 @@ async def inventory_list(
         query = query.filter(Inventory.item_type == item_type)
     if material and material != "all":
         query = query.filter(Inventory.material == material)
-    if club_items is not None:
-        query = query.filter(Inventory.is_club_item == club_items)
+    
+    # Исправленная обработка фильтра клубных предметов
+    if club_items and club_items.strip():  # Проверяем что параметр не пустой
+        if club_items.lower() == "true":
+            query = query.filter(Inventory.is_club_item == True)
+        elif club_items.lower() == "false":
+            query = query.filter(Inventory.is_club_item == False)
+        # Если club_items не "true" и не "false", игнорируем фильтр
+    
     if search:
         query = query.filter(
             (Inventory.item_name.ilike(f"%{search}%")) |

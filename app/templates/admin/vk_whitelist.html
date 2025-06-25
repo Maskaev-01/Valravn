@@ -41,7 +41,7 @@
         </div>
         {% endif %}
 
-        <form method="post" action="/auth/admin/vk-whitelist/add" class="space-y-4">
+        <form method="post" action="/admin/vk-whitelist/add" class="space-y-4">
             <div class="grid md:grid-cols-3 gap-4">
                 <div>
                     <label for="vk_id" class="block text-sm font-medium text-gray-700">VK ID</label>
@@ -115,7 +115,7 @@
                             {{ user.created_at.strftime('%d.%m.%Y %H:%M') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <form method="post" action="/auth/admin/vk-whitelist/remove/{{ user.id }}" 
+                            <form method="post" action="/admin/vk-whitelist/remove/{{ user.id }}" 
                                   onsubmit="return confirm('Вы уверены, что хотите удалить пользователя {{ user.username }} из whitelist?')" 
                                   style="display: inline;">
                                 <button type="submit" class="text-red-600 hover:text-red-800">

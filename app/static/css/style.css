@@ -1,17 +1,23 @@
 /* Valravn Dark Theme Styles */
 
-/* Custom Dark Theme Variables */
+/* Custom Dark Theme Variables using the color palette from the screenshot */
 :root {
-  --raven-primary: #722f37;
-  --raven-secondary: #5f2730;
-  --raven-accent: #c49999;
-  --raven-dark: #261012;
-  --raven-light: #e0c4c4;
+  --raven-black: #0B090A;          /* Очень темный, почти черный */
+  --raven-dark-gray: #161A1D;      /* Темно-серый */
+  --raven-dark-red: #660708;       /* Темно-красный */
+  --raven-red: #A4161A;            /* Красный */
+  --raven-bright-red: #BA181B;     /* Ярко-красный */
+  --raven-light-red: #E5383B;      /* Светло-красный */
+  --raven-light-gray: #B1A7A6;     /* Светло-серый */
+  --raven-lighter-gray: #D3D3D3;   /* Светлый серый */
+  --raven-very-light: #F5F3F4;     /* Очень светлый */
+  --raven-white: #FFFFFF;          /* Белый */
 }
 
 /* Dark mode background patterns */
 .dark {
-  background-color: #0f0f0f;
+  background-color: var(--raven-black);
+  color: var(--raven-very-light);
 }
 
 /* Custom scrollbar for dark theme */
@@ -20,158 +26,163 @@
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1f1f1f;
+  background: var(--raven-dark-gray);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: var(--raven-primary);
+  background: var(--raven-red);
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--raven-secondary);
+  background: var(--raven-bright-red);
 }
 
 /* Enhanced focus states for dark theme */
 .dark input:focus,
 .dark select:focus,
 .dark textarea:focus {
-  box-shadow: 0 0 0 2px var(--raven-primary);
-  border-color: var(--raven-primary);
+  box-shadow: 0 0 0 2px var(--raven-red);
+  border-color: var(--raven-red);
 }
 
 /* Dark theme card styles */
 .dark .bg-white {
-  background-color: #1a1a1a !important;
-  border-color: #2d2d2d !important;
+  background-color: var(--raven-dark-gray) !important;
+  border-color: var(--raven-light-gray) !important;
+  color: var(--raven-very-light) !important;
 }
 
 .dark .bg-gray-50 {
-  background-color: #161616 !important;
+  background-color: var(--raven-black) !important;
+  color: var(--raven-very-light) !important;
 }
 
 .dark .bg-gray-100 {
-  background-color: #1f1f1f !important;
+  background-color: var(--raven-dark-gray) !important;
+  color: var(--raven-very-light) !important;
 }
 
 /* Button hover effects */
 .dark .hover\:bg-gray-200:hover {
-  background-color: #2d2d2d !important;
+  background-color: var(--raven-light-gray) !important;
 }
 
 .dark .hover\:bg-gray-100:hover {
-  background-color: #262626 !important;
+  background-color: var(--raven-light-gray) !important;
 }
 
 /* Raven theme specific buttons */
 .dark .bg-raven-600 {
-  background-color: var(--raven-primary);
+  background-color: var(--raven-red);
 }
 
 .dark .hover\:bg-raven-700:hover {
-  background-color: var(--raven-secondary);
+  background-color: var(--raven-bright-red);
 }
 
 /* Table styling for dark theme */
 .dark table {
-  border-color: #2d2d2d;
+  border-color: var(--raven-light-gray);
+  color: var(--raven-very-light);
 }
 
 .dark th {
-  background-color: #161616 !important;
-  color: #e5e5e5;
+  background-color: var(--raven-black) !important;
+  color: var(--raven-white) !important;
 }
 
 .dark td {
-  border-color: #2d2d2d;
+  border-color: var(--raven-light-gray);
+  color: var(--raven-very-light) !important;
 }
 
 .dark tr:hover {
-  background-color: #1a1a1a !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 /* Form elements dark theme */
 .dark input,
 .dark select,
 .dark textarea {
-  background-color: #1a1a1a;
-  border-color: #404040;
-  color: #e5e5e5;
+  background-color: var(--raven-dark-gray);
+  border-color: var(--raven-light-gray);
+  color: var(--raven-white);
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #888888;
+  color: var(--raven-light-gray);
 }
 
 /* Navigation active states */
 .dark .border-valravn-500 {
-  border-color: var(--raven-primary) !important;
+  border-color: var(--raven-red) !important;
 }
 
 .dark .text-valravn-600 {
-  color: var(--raven-accent) !important;
+  color: var(--raven-light-red) !important;
 }
 
 /* Alert and notification styles */
 .dark .bg-blue-50 {
-  background-color: #1e3a8a !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 .dark .border-blue-200 {
-  border-color: #3b82f6 !important;
+  border-color: var(--raven-red) !important;
 }
 
 .dark .text-blue-800 {
-  color: #60a5fa !important;
+  color: var(--raven-light-red) !important;
 }
 
 .dark .text-blue-700 {
-  color: #93c5fd !important;
+  color: var(--raven-light-red) !important;
 }
 
 /* Success states */
 .dark .bg-green-50 {
-  background-color: #14532d !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 .dark .text-green-800 {
-  color: #4ade80 !important;
+  color: var(--raven-light-red) !important;
 }
 
 /* Error states */
 .dark .bg-red-50 {
-  background-color: #7f1d1d !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 .dark .text-red-800 {
-  color: #f87171 !important;
+  color: var(--raven-light-red) !important;
 }
 
 /* Warning states */
 .dark .bg-yellow-50 {
-  background-color: #713f12 !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 .dark .border-yellow-200 {
-  border-color: #fbbf24 !important;
+  border-color: var(--raven-red) !important;
 }
 
 /* Purple theme for inventory */
 .dark .bg-purple-50 {
-  background-color: #581c87 !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 .dark .border-purple-200 {
-  border-color: #a855f7 !important;
+  border-color: var(--raven-red) !important;
 }
 
 .dark .text-purple-800 {
-  color: #c084fc !important;
+  color: var(--raven-light-red) !important;
 }
 
 .dark .bg-purple-100 {
-  background-color: #6b21a8 !important;
+  background-color: var(--raven-dark-red) !important;
 }
 
 /* Smooth transitions for theme switching */
@@ -204,12 +215,12 @@
 
 /* Raven logo styling */
 .dark .fas.fa-raven {
-  filter: drop-shadow(0 0 4px var(--raven-primary));
+  filter: drop-shadow(0 0 4px var(--raven-red));
 }
 
 /* Custom select styling */
 .dark select {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23888888' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23B1A7A6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 0.5rem center;
   background-repeat: no-repeat;
   background-size: 1.5em 1.5em;
@@ -231,58 +242,96 @@ select {
   appearance: none;
 }
 
-/* Дополнительные исправления цветов для темной темы */
-.dark .text-blue-600 {
-  color: #60a5fa !important;
-}
-
+/* Исправления всех цветов текста для темной темы */
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-blue-800,
 .dark .text-blue-900 {
-  color: #93c5fd !important;
+  color: var(--raven-light-red) !important;
 }
 
+.dark .text-green-600,
 .dark .text-green-700,
-.dark .text-green-600 {
-  color: #4ade80 !important;
+.dark .text-green-800 {
+  color: var(--raven-light-red) !important;
 }
 
+.dark .text-red-600,
 .dark .text-red-700,
-.dark .text-red-600 {
-  color: #f87171 !important;
+.dark .text-red-800 {
+  color: var(--raven-light-red) !important;
 }
 
-.dark .text-yellow-800,
+.dark .text-yellow-600,
 .dark .text-yellow-700,
-.dark .text-yellow-600 {
-  color: #fde047 !important;
+.dark .text-yellow-800 {
+  color: var(--raven-light-red) !important;
 }
 
+.dark .text-purple-600,
 .dark .text-purple-700,
-.dark .text-purple-600 {
-  color: #c084fc !important;
+.dark .text-purple-800 {
+  color: var(--raven-light-red) !important;
+}
+
+.dark .text-gray-400 {
+  color: var(--raven-light-gray) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--raven-lighter-gray) !important;
 }
 
 .dark .text-gray-600,
 .dark .text-gray-700,
-.dark .text-gray-800 {
-  color: #d1d5db !important;
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: var(--raven-very-light) !important;
 }
 
-.dark .text-gray-500 {
-  color: #9ca3af !important;
+/* Специальные цвета для ссылок и кнопок */
+.dark a {
+  color: var(--raven-light-red) !important;
 }
 
-.dark .text-gray-400 {
-  color: #6b7280 !important;
+.dark a:hover {
+  color: var(--raven-white) !important;
+}
+
+/* Badge и tag стили */
+.dark .bg-green-100 {
+  background-color: var(--raven-dark-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-red-100 {
+  background-color: var(--raven-dark-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-blue-100 {
+  background-color: var(--raven-dark-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-yellow-100 {
+  background-color: var(--raven-dark-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-purple-100 {
+  background-color: var(--raven-dark-red) !important;
+  color: var(--raven-white) !important;
 }
 
 /* Modal and overlay styles */
 .dark .modal-overlay {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(11, 9, 10, 0.9);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .dark .md\:hidden {
-    background-color: #161616;
+    background-color: var(--raven-dark-gray);
   }
 } 
