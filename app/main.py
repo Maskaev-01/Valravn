@@ -41,7 +41,12 @@ async def home(request: Request, db: Session = Depends(get_db)):
         user = await get_current_user_from_cookie(request, db)
         return RedirectResponse(url="/dashboard")
     except HTTPException:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url="/auth/login")
+
+# Редирект для VK ID SDK совместимости
+@app.get("/login")
+async def login_redirect():
+    return RedirectResponse(url="/auth/login", status_code=302)
 
 @app.get("/health")
 async def health_check():

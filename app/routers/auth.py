@@ -45,14 +45,10 @@ async def login_for_access_token(
 ):
     user = authenticate_user(db, username, password)
     if not user:
-        vk_auth_url = None
-        if vk_oauth.is_configured():
-            vk_auth_url = True  # Теперь используем VK ID SDK, не URL
-        
         return templates.TemplateResponse("login.html", {
             "request": request, 
             "error": "Неверное имя пользователя или пароль",
-            "vk_auth_url": vk_auth_url
+            "vk_auth_url": True if vk_oauth.is_configured() else None  # Только флаг для VK ID SDK
         })
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -63,67 +59,6 @@ async def login_for_access_token(
     response = RedirectResponse(url="/dashboard", status_code=302)
     response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
     return response
-
-@router.get("/vk")
-async def vk_auth():
-    """Редирект на авторизацию VK"""
-    if not vk_oauth.is_configured():
-        raise HTTPException(status_code=400, detail="VK OAuth не настроен")
-    
-    auth_url = vk_oauth.get_auth_url()
-    return RedirectResponse(auth_url)
-
-@router.get("/vk/callback")
-async def vk_callback(
-    request: Request,
-    code: str = Query(...),
-    state: str = Query(None),
-    db: Session = Depends(get_db)
-):
-    """Обработка callback от VK OAuth"""
-    try:
-        # Получаем access token
-        token_data = await vk_oauth.get_access_token(code)
-        access_token = token_data.get("access_token")
-        user_id = str(token_data.get("user_id"))
-        
-        if not access_token or not user_id:
-            raise HTTPException(status_code=400, detail="Не удалось получить данные от VK")
-        
-        # Получаем информацию о пользователе
-        user_info = await vk_oauth.get_user_info(access_token, user_id)
-        
-        # Создаем или обновляем пользователя
-        user = create_or_update_vk_user(
-            db=db,
-            vk_id=user_id,
-            first_name=user_info.get("first_name", ""),
-            last_name=user_info.get("last_name", ""),
-            avatar_url=user_info.get("photo_100")
-        )
-        
-        # Создаем JWT токен
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        jwt_token = create_access_token(
-            data={"sub": user.username}, expires_delta=access_token_expires
-        )
-        
-        response = RedirectResponse(url="/dashboard", status_code=302)
-        response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
-        return response
-        
-    except HTTPException as e:
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": f"Ошибка VK авторизации: {e.detail}",
-            "vk_auth_url": vk_oauth.get_auth_url() if vk_oauth.is_configured() else None
-        })
-    except Exception as e:
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": f"Внутренняя ошибка: {str(e)}",
-            "vk_auth_url": vk_oauth.get_auth_url() if vk_oauth.is_configured() else None
-        })
 
 @router.post("/register")
 async def register_user(
