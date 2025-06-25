@@ -15,7 +15,8 @@ from app.auth import (
     create_or_update_vk_user,
     add_vk_user_to_whitelist,
     get_admin_user,
-    get_current_user_from_cookie
+    get_current_user_from_cookie,
+    get_current_user
 )
 from app.vk_oauth import vk_oauth
 
