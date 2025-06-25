@@ -7,7 +7,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.models import User
+from app.models.models import User, VKWhitelist
 
 SECRET_KEY = os.getenv("SECRET_KEY", "valravn-secret-key-change-in-production")
 ALGORITHM = "HS256"
@@ -36,9 +36,70 @@ def authenticate_user(db: Session, username: str, password: str):
     user = db.query(User).filter(User.username == username).first()
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not user.hashed_password or not verify_password(password, user.hashed_password):
         return False
     return user
+
+def create_or_update_vk_user(db: Session, vk_id: str, first_name: str, last_name: str, avatar_url: Optional[str] = None):
+    """Создает или обновляет пользователя VK"""
+    # Проверяем, есть ли пользователь в whitelist
+    whitelist_entry = db.query(VKWhitelist).filter(VKWhitelist.vk_id == vk_id).first()
+    if not whitelist_entry:
+        raise HTTPException(status_code=403, detail="VK ID не в whitelist. Обратитесь к администратору.")
+    
+    # Ищем существующего пользователя
+    user = db.query(User).filter(User.vk_id == vk_id).first()
+    
+    if user:
+        # Обновляем данные пользователя
+        user.first_name = first_name
+        user.last_name = last_name
+        user.avatar_url = avatar_url
+        user.is_admin = 1 if whitelist_entry.is_admin else 0
+        user.is_whitelisted = True
+    else:
+        # Создаем нового пользователя
+        username = f"vk_{vk_id}"
+        user = User(
+            username=username,
+            vk_id=vk_id,
+            first_name=first_name,
+            last_name=last_name,
+            avatar_url=avatar_url,
+            is_admin=1 if whitelist_entry.is_admin else 0,
+            is_whitelisted=True,
+            hashed_password=None  # Для VK users пароль не нужен
+        )
+        db.add(user)
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+def is_vk_user_whitelisted(db: Session, vk_id: str) -> bool:
+    """Проверяет, есть ли VK пользователь в whitelist"""
+    whitelist_entry = db.query(VKWhitelist).filter(VKWhitelist.vk_id == vk_id).first()
+    return whitelist_entry is not None
+
+def add_vk_user_to_whitelist(db: Session, vk_id: str, username: str, is_admin: bool = False, added_by: Optional[int] = None):
+    """Добавляет VK пользователя в whitelist"""
+    existing = db.query(VKWhitelist).filter(VKWhitelist.vk_id == vk_id).first()
+    if existing:
+        # Обновляем существующую запись
+        existing.username = username
+        existing.is_admin = is_admin
+        existing.added_by = added_by
+    else:
+        # Создаем новую запись
+        whitelist_entry = VKWhitelist(
+            vk_id=vk_id,
+            username=username,
+            is_admin=is_admin,
+            added_by=added_by
+        )
+        db.add(whitelist_entry)
+    
+    db.commit()
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -90,4 +151,11 @@ async def get_current_user_from_cookie(request: Request, db: Session = Depends(g
 async def get_admin_user(current_user: User = Depends(get_current_user_from_cookie)):
     if current_user.is_admin != 1:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return current_user 
+    return current_user
+
+async def get_current_user_optional(request: Request, db: Session = Depends(get_db)):
+    """Получает текущего пользователя, но не требует аутентификации"""
+    try:
+        return await get_current_user_from_cookie(request, db)
+    except HTTPException:
+        return None 

@@ -14,6 +14,29 @@
         </div>
         
         <div class="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
+            {% if vk_auth_url %}
+            <!-- VK OAuth кнопка -->
+            <div class="mb-6">
+                <a href="{{ vk_auth_url }}" 
+                   class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zM20.52 15.684c0 2.684-.816 3.5-3.5 3.5H6.98c-2.684 0-3.5-.816-3.5-3.5V8.316c0-2.684.816-3.5 3.5-3.5h10.04c2.684 0 3.5.816 3.5 3.5v7.368z"/>
+                        <path d="M18.947 9.684c-.211-.158-.421-.263-.632-.316-.105-.026-.211-.053-.316-.053-.579 0-1.105.211-1.579.632-.421.368-.789.842-1.105 1.421-.316-.579-.684-1.053-1.105-1.421-.474-.421-1-.632-1.579-.632-.105 0-.211.027-.316.053-.211.053-.421.158-.632.316-.526.421-.789 1-.789 1.737 0 .474.132.947.395 1.421.368.631.842 1.184 1.421 1.658.316.263.684.474 1.105.632.421.158.842.237 1.263.237s.842-.079 1.263-.237c.421-.158.789-.369 1.105-.632.579-.474 1.053-1.027 1.421-1.658.263-.474.395-.947.395-1.421 0-.737-.263-1.316-.789-1.737z"/>
+                    </svg>
+                    Войти через ВКонтакте
+                </a>
+                
+                <div class="mt-4 relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">или</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
             <form class="space-y-6" method="post" action="/login">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700">

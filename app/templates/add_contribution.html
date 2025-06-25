@@ -23,23 +23,80 @@
     </div>
 
     <div class="max-w-2xl mx-auto">
+        <!-- Success/Error Messages -->
+        {% if success %}
+        <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-green-800">{{ success }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-800">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="bg-white shadow-lg rounded-lg border border-gray-200">
             <div class="p-6">
-                <form method="post" action="/add-contribution" class="space-y-6">
+                <form method="post" action="/add-contribution" enctype="multipart/form-data" class="space-y-6">
                     <!-- Name Field -->
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="contributor_name" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-user mr-2 text-gray-400"></i>
                             Имя участника
+                        </label>
+                        {% if is_vk_user %}
+                        <input type="text" 
+                               id="contributor_name" 
+                               name="contributor_name" 
+                               value="{{ user_name }}"
+                               readonly
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm"
+                               placeholder="Имя из VK профиля">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Имя автоматически получено из вашего VK профиля
+                        </p>
+                        {% else %}
+                        <input type="text" 
+                               id="contributor_name" 
+                               name="contributor_name" 
+                               value="{{ user_name }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 sm:text-sm"
+                               placeholder="Введите имя участника">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Укажите имя человека, который вносит взнос
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description Field -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-comment mr-2 text-gray-400"></i>
+                            Описание взноса
                         </label>
                         <input type="text" 
                                id="description" 
                                name="description" 
                                required
                                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 sm:text-sm"
-                               placeholder="Введите имя участника">
+                               placeholder="Например: Взнос за декабрь 2024">
                         <p class="mt-1 text-sm text-gray-500">
-                            Укажите имя человека, который вносит взнос
+                            Краткое описание цели или периода взноса
                         </p>
                     </div>
 
@@ -83,21 +140,46 @@
                         </p>
                     </div>
 
-                    <!-- Info Box -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                    <!-- Screenshot Field -->
+                    <div>
+                        <label for="screenshot" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-camera mr-2 text-gray-400"></i>
+                            Скриншот перевода <span class="text-red-500">*</span>
+                        </label>
+                        <input type="file" 
+                               id="screenshot" 
+                               name="screenshot" 
+                               accept="image/*"
+                               required
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-valravn-500 focus:border-valravn-500 sm:text-sm"
+                               onchange="previewImage(this)">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Загрузите скриншот банковского перевода или другого подтверждения платежа
+                        </p>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="mt-3 hidden">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Предварительный просмотр:</p>
+                            <img id="previewImg" src="" alt="Предварительный просмотр" class="max-w-full h-32 object-cover border rounded">
+                        </div>
+                    </div>
+
+                    <!-- Moderation Info Box -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-info-circle text-blue-400"></i>
+                                <i class="fas fa-clock text-yellow-400"></i>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-medium text-blue-800">
-                                    Информация о взносах
+                                <h3 class="text-sm font-medium text-yellow-800">
+                                    Модерация взносов
                                 </h3>
-                                <div class="mt-2 text-sm text-blue-700">
+                                <div class="mt-2 text-sm text-yellow-700">
                                     <ul class="list-disc pl-5 space-y-1">
-                                        <li>Все взносы автоматически помечаются как тип "Взнос"</li>
-                                        <li>Информация будет доступна в отчетах и статистике</li>
-                                        <li>При необходимости админ может отредактировать запись</li>
+                                        <li>Все взносы проходят проверку администратором</li>
+                                        <li>Скриншот перевода обязателен для подтверждения</li>
+                                        <li>После одобрения взнос появится в общей статистике</li>
+                                        <li>Уведомление о статусе придет через систему</li>
                                     </ul>
                                 </div>
                             </div>
@@ -113,8 +195,8 @@
                         </a>
                         <button type="submit" 
                                 class="bg-valravn-600 hover:bg-valravn-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-valravn-500">
-                            <i class="fas fa-save mr-2"></i>
-                            Сохранить взнос
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Отправить на проверку
                         </button>
                     </div>
                 </form>
@@ -159,6 +241,24 @@
     function setToday() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('contribution_date').value = today;
+    }
+    
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.classList.remove('hidden');
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.classList.add('hidden');
+        }
     }
     
     // Set today's date by default

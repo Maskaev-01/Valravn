@@ -15,6 +15,11 @@
                     </h1>
                     <p class="mt-2 text-sm text-gray-600">
                         ID предмета: #{{ item.id }} | Владелец: {{ item.owner }}
+                        {% if item.is_club_item %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2">
+                            <i class="fas fa-users mr-1"></i>Клубный предмет
+                        </span>
+                        {% endif %}
                     </p>
                 </div>
                 <div class="flex space-x-3">
@@ -30,10 +35,24 @@
             </div>
         </div>
 
+        <!-- Error Message -->
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-800">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Form -->
         <div class="bg-white shadow-lg rounded-lg border border-gray-200">
             <div class="p-6">
-                <form action="/inventory/edit/{{ item.id }}" method="post" class="space-y-6">
+                <form action="/inventory/edit/{{ item.id }}" method="post" enctype="multipart/form-data" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Basic Info -->
                         <div class="md:col-span-2">
@@ -51,6 +70,20 @@
                                    value="{{ item.owner }}"
                                    required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+
+                        <!-- Club Item Checkbox -->
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                   id="is_club_item" 
+                                   name="is_club_item" 
+                                   value="true"
+                                   {% if item.is_club_item %}checked{% endif %}
+                                   class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <label for="is_club_item" class="ml-2 block text-sm text-gray-900">
+                                <i class="fas fa-users text-purple-400 mr-1"></i>
+                                Клубный предмет
+                            </label>
                         </div>
 
                         <!-- Item Name -->
@@ -95,6 +128,51 @@
                                    name="subtype"
                                    value="{{ item.subtype or '' }}"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+
+                        <!-- Current Photo and Upload -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-camera text-gray-400 mr-2"></i>Фотография предмета
+                            </label>
+                            
+                            {% if item.image_path %}
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600 mb-2">Текущая фотография:</p>
+                                <div class="relative inline-block">
+                                    <img src="{{ item.image_path }}" 
+                                         alt="{{ item.item_name }}" 
+                                         class="h-32 w-auto object-cover border rounded-lg cursor-pointer"
+                                         onclick="openImageModal('{{ item.image_path }}')">
+                                    <div class="mt-2">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" name="remove_image" value="true" class="rounded border-gray-300 text-red-600">
+                                            <span class="ml-2 text-sm text-red-600">Удалить текущее изображение</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <input type="file" 
+                                   id="image" 
+                                   name="image" 
+                                   accept="image/*"
+                                   onchange="previewImage(this)"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <p class="mt-1 text-sm text-gray-500">
+                                {% if item.image_path %}
+                                Загрузите новое изображение для замены текущего (JPEG, PNG, WebP). Максимальный размер: 10MB
+                                {% else %}
+                                Загрузите фотографию предмета (JPEG, PNG, WebP). Максимальный размер: 10MB
+                                {% endif %}
+                            </p>
+                            
+                            <!-- New Image Preview -->
+                            <div id="imagePreview" class="mt-3 hidden">
+                                <p class="text-sm font-medium text-gray-700 mb-2">Новое изображение:</p>
+                                <img id="previewImg" src="" alt="Предварительный просмотр" class="max-w-full h-48 object-cover border rounded-lg">
+                            </div>
                         </div>
 
                         <!-- Material Properties -->
@@ -206,7 +284,7 @@
                     <!-- Buttons -->
                     <div class="flex justify-between pt-6 border-t border-gray-200">
                         <div>
-                            {% if user.is_admin %}
+                            {% if user.is_admin or (item.created_by_user_id == user.id) %}
                             <button type="button" 
                                     onclick="confirmDelete()"
                                     class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
@@ -231,6 +309,17 @@
     </div>
 </div>
 
+<!-- Image Modal for viewing current photo -->
+<div id="imageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-75">
+    <div class="relative max-w-4xl max-h-full p-4">
+        <button onclick="closeImageModal()" 
+                class="absolute top-2 right-2 text-white text-2xl hover:text-gray-300 z-10">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="modalImage" src="" alt="Увеличенное изображение" class="max-w-full max-h-full object-contain">
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal (Hidden) -->
 <form id="delete-form" method="post" action="/inventory/delete/{{ item.id }}" style="display: none;">
 </form>
@@ -241,5 +330,48 @@ function confirmDelete() {
         document.getElementById('delete-form').submit();
     }
 }
+
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.classList.remove('hidden');
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.classList.add('hidden');
+    }
+}
+
+function openImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModal').classList.remove('hidden');
+    document.getElementById('imageModal').classList.add('flex');
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+    document.getElementById('imageModal').classList.remove('flex');
+}
+
+// Закрытие модального окна по клику вне изображения
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+// Закрытие по клавише Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
 </script>
 {% endblock %} 

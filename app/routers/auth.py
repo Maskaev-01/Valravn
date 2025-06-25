@@ -1,19 +1,36 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Form, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.models import User
+from app.models.models import User, VKWhitelist
 from app.models.schemas import UserCreate, UserLogin
-from app.auth import authenticate_user, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.auth import (
+    authenticate_user, 
+    create_access_token, 
+    get_password_hash, 
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    create_or_update_vk_user,
+    add_vk_user_to_whitelist,
+    get_admin_user
+)
+from app.vk_oauth import vk_oauth
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    # Получаем URL для авторизации через VK если OAuth настроен
+    vk_auth_url = None
+    if vk_oauth.is_configured():
+        vk_auth_url = vk_oauth.get_auth_url()
+    
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "vk_auth_url": vk_auth_url
+    })
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
@@ -28,9 +45,14 @@ async def login_for_access_token(
 ):
     user = authenticate_user(db, username, password)
     if not user:
+        vk_auth_url = None
+        if vk_oauth.is_configured():
+            vk_auth_url = vk_oauth.get_auth_url()
+        
         return templates.TemplateResponse("login.html", {
             "request": request, 
-            "error": "Неверное имя пользователя или пароль"
+            "error": "Неверное имя пользователя или пароль",
+            "vk_auth_url": vk_auth_url
         })
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -41,6 +63,67 @@ async def login_for_access_token(
     response = RedirectResponse(url="/dashboard", status_code=302)
     response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
     return response
+
+@router.get("/vk")
+async def vk_auth():
+    """Редирект на авторизацию VK"""
+    if not vk_oauth.is_configured():
+        raise HTTPException(status_code=400, detail="VK OAuth не настроен")
+    
+    auth_url = vk_oauth.get_auth_url()
+    return RedirectResponse(auth_url)
+
+@router.get("/vk/callback")
+async def vk_callback(
+    request: Request,
+    code: str = Query(...),
+    state: str = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Обработка callback от VK OAuth"""
+    try:
+        # Получаем access token
+        token_data = await vk_oauth.get_access_token(code)
+        access_token = token_data.get("access_token")
+        user_id = str(token_data.get("user_id"))
+        
+        if not access_token or not user_id:
+            raise HTTPException(status_code=400, detail="Не удалось получить данные от VK")
+        
+        # Получаем информацию о пользователе
+        user_info = await vk_oauth.get_user_info(access_token, user_id)
+        
+        # Создаем или обновляем пользователя
+        user = create_or_update_vk_user(
+            db=db,
+            vk_id=user_id,
+            first_name=user_info.get("first_name", ""),
+            last_name=user_info.get("last_name", ""),
+            avatar_url=user_info.get("photo_100")
+        )
+        
+        # Создаем JWT токен
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        jwt_token = create_access_token(
+            data={"sub": user.username}, expires_delta=access_token_expires
+        )
+        
+        response = RedirectResponse(url="/dashboard", status_code=302)
+        response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
+        return response
+        
+    except HTTPException as e:
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": f"Ошибка VK авторизации: {e.detail}",
+            "vk_auth_url": vk_oauth.get_auth_url() if vk_oauth.is_configured() else None
+        })
+    except Exception as e:
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": f"Внутренняя ошибка: {str(e)}",
+            "vk_auth_url": vk_oauth.get_auth_url() if vk_oauth.is_configured() else None
+        })
 
 @router.post("/register")
 async def register_user(
@@ -95,6 +178,67 @@ async def register_user(
         "request": request,
         "success": "Регистрация успешна! Теперь вы можете войти в систему."
     })
+
+# Админские роуты для управления VK whitelist
+@router.get("/admin/vk-whitelist", response_class=HTMLResponse)
+async def vk_whitelist_page(
+    request: Request,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Страница управления VK whitelist"""
+    whitelist = db.query(VKWhitelist).all()
+    return templates.TemplateResponse("admin/vk_whitelist.html", {
+        "request": request,
+        "whitelist": whitelist
+    })
+
+@router.post("/admin/vk-whitelist/add")
+async def add_to_vk_whitelist(
+    request: Request,
+    vk_id: str = Form(...),
+    username: str = Form(...),
+    is_admin: bool = Form(False),
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Добавляет пользователя в VK whitelist"""
+    try:
+        add_vk_user_to_whitelist(
+            db=db,
+            vk_id=vk_id,
+            username=username,
+            is_admin=is_admin,
+            added_by=current_user.id
+        )
+        
+        whitelist = db.query(VKWhitelist).all()
+        return templates.TemplateResponse("admin/vk_whitelist.html", {
+            "request": request,
+            "whitelist": whitelist,
+            "success": f"Пользователь {username} добавлен в whitelist"
+        })
+    except Exception as e:
+        whitelist = db.query(VKWhitelist).all()
+        return templates.TemplateResponse("admin/vk_whitelist.html", {
+            "request": request,
+            "whitelist": whitelist,
+            "error": f"Ошибка: {str(e)}"
+        })
+
+@router.post("/admin/vk-whitelist/remove/{whitelist_id}")
+async def remove_from_vk_whitelist(
+    whitelist_id: int,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Удаляет пользователя из VK whitelist"""
+    whitelist_entry = db.query(VKWhitelist).filter(VKWhitelist.id == whitelist_id).first()
+    if whitelist_entry:
+        db.delete(whitelist_entry)
+        db.commit()
+    
+    return RedirectResponse(url="/auth/admin/vk-whitelist", status_code=302)
 
 @router.get("/logout")
 async def logout():

@@ -4,9 +4,9 @@
 :root {
   --raven-primary: #722f37;
   --raven-secondary: #5f2730;
-  --raven-accent: #9d6b6b;
+  --raven-accent: #c49999;
   --raven-dark: #261012;
-  --raven-light: #b89999;
+  --raven-light: #e0c4c4;
 }
 
 /* Dark mode background patterns */
@@ -115,63 +115,63 @@
 
 /* Alert and notification styles */
 .dark .bg-blue-50 {
-  background-color: #1a1a2e !important;
+  background-color: #1e3a8a !important;
 }
 
 .dark .border-blue-200 {
-  border-color: #2d2d4d !important;
+  border-color: #3b82f6 !important;
 }
 
 .dark .text-blue-800 {
-  color: #a8b8ff !important;
+  color: #60a5fa !important;
 }
 
 .dark .text-blue-700 {
-  color: #9ca8ff !important;
+  color: #93c5fd !important;
 }
 
 /* Success states */
 .dark .bg-green-50 {
-  background-color: #1a2e1a !important;
+  background-color: #14532d !important;
 }
 
 .dark .text-green-800 {
-  color: #a8ffa8 !important;
+  color: #4ade80 !important;
 }
 
 /* Error states */
 .dark .bg-red-50 {
-  background-color: #2e1a1a !important;
+  background-color: #7f1d1d !important;
 }
 
 .dark .text-red-800 {
-  color: #ffa8a8 !important;
+  color: #f87171 !important;
 }
 
 /* Warning states */
 .dark .bg-yellow-50 {
-  background-color: #2e2e1a !important;
+  background-color: #713f12 !important;
 }
 
 .dark .border-yellow-200 {
-  border-color: #4d4d2d !important;
+  border-color: #fbbf24 !important;
 }
 
 /* Purple theme for inventory */
 .dark .bg-purple-50 {
-  background-color: #2a1a2e !important;
+  background-color: #581c87 !important;
 }
 
 .dark .border-purple-200 {
-  border-color: #4d2d4d !important;
+  border-color: #a855f7 !important;
 }
 
 .dark .text-purple-800 {
-  color: #dda8ff !important;
+  color: #c084fc !important;
 }
 
 .dark .bg-purple-100 {
-  background-color: #351a3a !important;
+  background-color: #6b21a8 !important;
 }
 
 /* Smooth transitions for theme switching */
@@ -210,6 +210,69 @@
 /* Custom select styling */
 .dark select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23888888' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Убираем стрелочки в светлой теме тоже */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23374151' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Дополнительные исправления цветов для темной темы */
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+.dark .text-blue-900 {
+  color: #93c5fd !important;
+}
+
+.dark .text-green-700,
+.dark .text-green-600 {
+  color: #4ade80 !important;
+}
+
+.dark .text-red-700,
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+.dark .text-yellow-800,
+.dark .text-yellow-700,
+.dark .text-yellow-600 {
+  color: #fde047 !important;
+}
+
+.dark .text-purple-700,
+.dark .text-purple-600 {
+  color: #c084fc !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.dark .text-gray-400 {
+  color: #6b7280 !important;
 }
 
 /* Modal and overlay styles */
