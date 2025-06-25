@@ -192,9 +192,18 @@ async def vk_id_process(
         print(f"VK Data received: {data}")  # Отладка
         
         user_id = str(data.get("user_id"))
-        first_name = data.get("first_name", "")
-        last_name = data.get("last_name", "")
+        first_name = data.get("first_name", "").strip()
+        last_name = data.get("last_name", "").strip()
         photo_100 = data.get("photo_100")
+        
+        # Fallback для пустых имен
+        if not first_name and not last_name:
+            first_name = "VK"
+            last_name = f"User {user_id[-4:]}"  # Последние 4 цифры ID
+        elif not first_name:
+            first_name = "VK"
+        elif not last_name:
+            last_name = "User"
         
         if not user_id:
             print(f"Missing user_id: {user_id}")  # Отладка
