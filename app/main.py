@@ -10,9 +10,46 @@ from app.models.models import User
 from app.models import models
 from app.routers import auth, budget, admin, inventory
 from app.auth import get_current_user_from_cookie
+from sqlalchemy import text
 
 # Создаем таблицы
 models.Base.metadata.create_all(bind=engine)
+
+# Добавляем недостающие таблицы, если их нет
+try:
+    with engine.connect() as connection:
+        # Проверяем и создаем таблицу account_link_requests если нужно
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS account_link_requests (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                target_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+                message TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                processed_at TIMESTAMP,
+                processed_by INTEGER REFERENCES users(id),
+                
+                -- Предотвращает дубликаты активных запросов
+                UNIQUE(user_id, target_user_id, status)
+            );
+        """))
+        
+        # Создаем индексы если их нет
+        connection.execute(text("""
+            CREATE INDEX IF NOT EXISTS idx_account_link_requests_user_id ON account_link_requests(user_id);
+        """))
+        connection.execute(text("""
+            CREATE INDEX IF NOT EXISTS idx_account_link_requests_target_user_id ON account_link_requests(target_user_id);
+        """))
+        connection.execute(text("""
+            CREATE INDEX IF NOT EXISTS idx_account_link_requests_status ON account_link_requests(status);
+        """))
+        
+        connection.commit()
+        print("✅ Account link requests table and indexes created/verified")
+except Exception as e:
+    print(f"⚠️  Database migration warning: {e}")
 
 app = FastAPI(title="Valravn Budget Management", version="1.0.0")
 

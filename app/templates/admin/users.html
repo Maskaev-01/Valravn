@@ -55,6 +55,19 @@
             </div>
         </div>
     </div>
+    {% elif success == 'password_set_for_vk_user' %}
+    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-check-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-800">
+                    <strong>Успешно!</strong> Пароль установлен для VK пользователя. Теперь он может входить как через VK, так и через логин/пароль.
+                </p>
+            </div>
+        </div>
+    </div>
     {% elif success and success.startswith('sync_complete') %}
     <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
         <div class="flex">
@@ -202,14 +215,34 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 {% if not user_item.vk_id %}
-                                <button onclick="openResetPasswordModal('{{ user_item.id }}', '{{ user_item.username }}')"
+                                <!-- Обычный пользователь -->
+                                <button onclick="openResetPasswordModal('{{ user_item.id }}', '{{ user_item.username }}', false)"
                                         class="text-orange-600 hover:text-orange-900 transition-colors mr-3">
                                     <i class="fas fa-key mr-1"></i>Сменить пароль
                                 </button>
                                 {% else %}
-                                <span class="text-gray-400 text-xs">
-                                    <i class="fab fa-vk mr-1"></i>VK пользователь
-                                </span>
+                                <!-- VK пользователь -->
+                                <div class="flex flex-col space-y-1">
+                                    {% if user_item.hashed_password %}
+                                    <!-- У VK пользователя уже есть пароль -->
+                                    <button onclick="openResetPasswordModal('{{ user_item.id }}', '{{ user_item.username }}', false)"
+                                            class="text-orange-600 hover:text-orange-900 transition-colors text-left">
+                                        <i class="fas fa-key mr-1"></i>Сменить пароль
+                                    </button>
+                                    <span class="text-green-600 text-xs">
+                                        <i class="fas fa-check mr-1"></i>Есть пароль для входа
+                                    </span>
+                                    {% else %}
+                                    <!-- У VK пользователя нет пароля -->
+                                    <button onclick="openResetPasswordModal('{{ user_item.id }}', '{{ user_item.username }}', true)"
+                                            class="text-blue-600 hover:text-blue-900 transition-colors text-left">
+                                        <i class="fas fa-plus mr-1"></i>Установить пароль
+                                    </button>
+                                    <span class="text-gray-500 text-xs">
+                                        <i class="fab fa-vk mr-1"></i>Только VK вход
+                                    </span>
+                                    {% endif %}
+                                </div>
                                 {% endif %}
                             </td>
                         </tr>
@@ -306,8 +339,8 @@
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold text-gray-900">
-                    <i class="fas fa-key mr-2 text-orange-600"></i>
-                    Смена пароля
+                    <i id="modalIcon" class="fas fa-key mr-2 text-orange-600"></i>
+                    <span id="modalTitle">Смена пароля</span>
                 </h3>
                 <button onclick="closeResetPasswordModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
@@ -316,8 +349,14 @@
             
             <div class="mb-4">
                 <p class="text-sm text-gray-600">
-                    Смена пароля для пользователя: <strong id="selectedUsername"></strong>
+                    <span id="modalDescription">Смена пароля для пользователя:</span> <strong id="selectedUsername"></strong>
                 </p>
+                <div id="vkUserInfo" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md hidden">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>VK пользователь:</strong> После установки пароля сможет входить как через VK, так и через логин/пароль.
+                    </p>
+                </div>
             </div>
             
             <form id="resetPasswordForm" method="post" action="/admin/reset-password" class="space-y-4">
@@ -357,11 +396,32 @@
 </div>
 
 <script>
-function openResetPasswordModal(userId, username) {
+function openResetPasswordModal(userId, username, isVkUserWithoutPassword = false) {
     document.getElementById('userId').value = userId;
     document.getElementById('selectedUsername').textContent = username;
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmPassword').value = '';
+    
+    // Настраиваем интерфейс в зависимости от типа операции
+    const modalIcon = document.getElementById('modalIcon');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    const vkUserInfo = document.getElementById('vkUserInfo');
+    
+    if (isVkUserWithoutPassword) {
+        // Режим установки пароля для VK пользователя
+        modalIcon.className = 'fas fa-plus mr-2 text-blue-600';
+        modalTitle.textContent = 'Установка пароля';
+        modalDescription.textContent = 'Установка пароля для VK пользователя:';
+        vkUserInfo.classList.remove('hidden');
+    } else {
+        // Режим смены пароля (обычный)
+        modalIcon.className = 'fas fa-key mr-2 text-orange-600';
+        modalTitle.textContent = 'Смена пароля';
+        modalDescription.textContent = 'Смена пароля для пользователя:';
+        vkUserInfo.classList.add('hidden');
+    }
+    
     document.getElementById('resetPasswordModal').classList.remove('hidden');
 }
 

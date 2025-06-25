@@ -413,7 +413,7 @@ async def request_account_link(
     db.add(link_request)
     db.commit()
     
-    return RedirectResponse(url="/profile", status_code=302)
+    return RedirectResponse(url="/auth/profile", status_code=302)
 
 @router.post("/confirm-account-link")
 async def confirm_account_link(
@@ -460,4 +460,4 @@ async def confirm_account_link(
     
     db.commit()
     
-    return RedirectResponse(url="/profile", status_code=302) 
+    return RedirectResponse(url="/auth/profile", status_code=302) 

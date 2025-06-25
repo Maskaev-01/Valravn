@@ -177,11 +177,20 @@ async def admin_reset_password(
     if not user_to_update:
         return RedirectResponse(url="/admin/users?error=user_not_found", status_code=302)
     
+    # Определяем тип операции
+    is_vk_user_setting_password = user_to_update.vk_id and not user_to_update.hashed_password
+    
     # Обновляем пароль
     user_to_update.hashed_password = get_password_hash(new_password)
     db.commit()
     
-    return RedirectResponse(url="/admin/users?success=password_changed", status_code=302)
+    # Формируем сообщение об успехе
+    if is_vk_user_setting_password:
+        success_message = "password_set_for_vk_user"
+    else:
+        success_message = "password_changed"
+    
+    return RedirectResponse(url=f"/admin/users?success={success_message}", status_code=302)
 
 # Новый роут для синхронизации данных VK пользователей
 @router.post("/admin/sync-vk-users")
