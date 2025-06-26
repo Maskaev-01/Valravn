@@ -19,12 +19,16 @@ def can_edit_inventory(current_user: User, item: Inventory) -> bool:
     if current_user.is_admin == 1:
         return True
     
-    # Владелец предмета может редактировать
+    # Создатель (автор) записи может редактировать (включая клубные предметы)
     if item.created_by_user_id == current_user.id:
         return True
     
+    # Для клубных предметов - только автор и админы могут редактировать
+    if item.is_club_item:
+        return False  # Уже проверили админа и автора выше
+    
+    # Для обычных предметов - владелец может редактировать
     # Для старых записей без created_by_user_id проверяем по имени владельца
-    # Только если имя пользователя совпадает с owner в записи
     if item.created_by_user_id is None:
         # Для VK пользователей проверяем полное имя
         if current_user.vk_id:
@@ -155,8 +159,11 @@ async def add_inventory(
         if image and image.filename:
             image_path = await file_manager.save_inventory_image(image)
         
+        # Если клубный предмет, то владелец всегда "Клуб"
+        final_owner = "Клуб" if is_club_item else owner
+        
         inventory_item = Inventory(
-            owner=owner,
+            owner=final_owner,
             item_name=item_name,
             item_type=item_type if item_type else None,
             subtype=subtype if subtype else None,
@@ -266,8 +273,11 @@ async def edit_inventory(
             # Сохраняем новое
             item.image_path = await file_manager.save_inventory_image(image)
         
+        # Если клубный предмет, то владелец всегда "Клуб"
+        final_owner = "Клуб" if is_club_item else owner
+        
         # Обновляем данные
-        item.owner = owner
+        item.owner = final_owner
         item.item_name = item_name
         item.item_type = item_type if item_type else None
         item.subtype = subtype if subtype else None
@@ -405,12 +415,18 @@ async def view_inventory_item(
     # Проверяем права на редактирование
     can_edit = can_edit_inventory(current_user, item)
     
+    # Получаем информацию об авторе записи
+    author = None
+    if item.created_by_user_id:
+        author = db.query(User).filter(User.id == item.created_by_user_id).first()
+    
     return templates.TemplateResponse("inventory/detail.html", {
         "request": request,
         "user": current_user,
         "item": item,
         "similar_items": similar_items,
-        "can_edit": can_edit
+        "can_edit": can_edit,
+        "author": author
     })
 
 # Новый роут для миграции данных (только для админов)

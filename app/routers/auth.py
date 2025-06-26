@@ -177,12 +177,24 @@ async def add_to_vk_whitelist(
         final_vk_id = vk_id.strip()
         final_username = username.strip() if username else ""
         
-        # Если имя не указано, пытаемся получить из VK API
-        if not final_username and vk_oauth.has_service_token():
+        # Если имя не указано или указано на английском, пытаемся получить из VK API
+        should_get_from_vk = (
+            not final_username or  # Имя не указано
+            (final_username and not any(ord(c) > 127 for c in final_username))  # Имя содержит только ASCII (английские буквы)
+        )
+        
+        if should_get_from_vk and vk_oauth.has_service_token():
             user_info = await vk_oauth.get_user_info(final_vk_id)
             if user_info:
                 final_vk_id = user_info["id"]  # Используем числовой ID
-                final_username = f"{user_info['first_name']} {user_info['last_name']}".strip()
+                vk_first_name = user_info['first_name']
+                vk_last_name = user_info['last_name']
+                vk_full_name = f"{vk_first_name} {vk_last_name}".strip()
+                
+                # Используем имя из VK если оно на русском языке или если original не указан
+                if not final_username or vk_full_name:
+                    final_username = vk_full_name
+                
                 if not final_username:
                     final_username = f"VK User {final_vk_id}"
             else:
@@ -318,7 +330,13 @@ async def vk_id_process(
         raise HTTPException(status_code=400, detail=f"Ошибка VK авторизации: {str(e)}")
 
 @router.get("/profile", response_class=HTMLResponse)
-async def profile(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
+async def profile(
+    request: Request, 
+    current_user: User = Depends(get_current_user_from_cookie), 
+    db: Session = Depends(get_db),
+    success: str = Query(None),
+    error: str = Query(None)
+):
     """Профиль пользователя с возможностью связывания аккаунтов"""
     
     # Ищем возможные дубликаты для этого пользователя
@@ -379,7 +397,9 @@ async def profile(request: Request, current_user: User = Depends(get_current_use
         "request": request,
         "user": current_user,
         "potential_matches": potential_matches,
-        "link_requests": link_requests
+        "link_requests": link_requests,
+        "success_message": success,
+        "error_message": error
     })
 
 @router.post("/request-account-link")
@@ -464,4 +484,85 @@ async def confirm_account_link(
     
     db.commit()
     
-    return RedirectResponse(url="/auth/profile", status_code=302) 
+    return RedirectResponse(url="/auth/profile", status_code=302)
+
+@router.post("/update-username")
+async def update_username(
+    request: Request,
+    new_username: str = Form(...),
+    current_user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db)
+):
+    """Изменение логина пользователя"""
+    try:
+        # Проверяем что новый логин не пустой и корректный
+        new_username = new_username.strip()
+        if not new_username:
+            return RedirectResponse(url="/auth/profile?error=Логин не может быть пустым", status_code=302)
+        
+        if len(new_username) < 3:
+            return RedirectResponse(url="/auth/profile?error=Логин должен содержать минимум 3 символа", status_code=302)
+        
+        # Проверяем что логин не занят другим пользователем
+        existing_user = db.query(User).filter(
+            User.username == new_username,
+            User.id != current_user.id
+        ).first()
+        
+        if existing_user:
+            return RedirectResponse(url="/auth/profile?error=Этот логин уже используется другим пользователем", status_code=302)
+        
+        # Обновляем данные в связанных таблицах
+        from app.models.models import Budget, Inventory
+        
+        # 1. Обновляем записи в Budget (contributor_name для старых записей)
+        budget_records = db.query(Budget).filter(
+            Budget.user_id == current_user.id,
+            Budget.contributor_name == current_user.username
+        ).all()
+        
+        for record in budget_records:
+            # Для VK пользователей используем полное имя, для обычных - новый username
+            if current_user.vk_id:
+                record.contributor_name = f"{current_user.first_name} {current_user.last_name}".strip()
+            else:
+                record.contributor_name = new_username
+        
+        # 2. Обновляем записи в Inventory (owner для записей где owner совпадает с текущим username)
+        inventory_records = db.query(Inventory).filter(
+            Inventory.created_by_user_id == current_user.id,
+            Inventory.owner == current_user.username
+        ).all()
+        
+        for record in inventory_records:
+            # Для VK пользователей используем полное имя, для обычных - новый username
+            if current_user.vk_id:
+                record.owner = f"{current_user.first_name} {current_user.last_name}".strip()
+            else:
+                record.owner = new_username
+        
+        # 3. Обновляем записи в VKWhitelist если есть
+        if current_user.vk_id:
+            vk_whitelist_entry = db.query(VKWhitelist).filter(VKWhitelist.vk_id == current_user.vk_id).first()
+            if vk_whitelist_entry:
+                # Для VK пользователей в whitelist используем полное имя
+                vk_whitelist_entry.username = f"{current_user.first_name} {current_user.last_name}".strip()
+        
+        # 4. Обновляем username пользователя
+        current_user.username = new_username
+        
+        db.commit()
+        
+        # Создаем новый JWT токен с обновленным username
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        jwt_token = create_access_token(
+            data={"sub": new_username}, expires_delta=access_token_expires
+        )
+        
+        # Возвращаемся на профиль с сообщением об успехе
+        response = RedirectResponse(url="/auth/profile?success=Логин успешно изменен", status_code=302)
+        response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
+        return response
+        
+    except Exception as e:
+        return RedirectResponse(url="/auth/profile?error=Произошла ошибка при изменении логина", status_code=302) 

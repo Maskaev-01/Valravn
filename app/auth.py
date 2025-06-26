@@ -84,7 +84,18 @@ def create_or_update_vk_user(db: Session, vk_id: str, first_name: str, last_name
         return existing_user_by_email
     
     # Создаем нового пользователя
-    username = f"vk_{vk_id}"
+    # Сначала пытаемся использовать username из whitelist, если он подходящий
+    whitelist_username = whitelist_entry.username
+    if whitelist_username and not whitelist_username.startswith("VK User"):
+        # Преобразуем имя в username: убираем пробелы, приводим к нижнему регистру
+        username = whitelist_username.replace(" ", "_").lower()
+        # Убираем специальные символы
+        import re
+        username = re.sub(r'[^a-zA-Z0-9_а-яё]', '', username, flags=re.IGNORECASE)
+        if len(username) < 3:
+            username = f"vk_{vk_id}"
+    else:
+        username = f"vk_{vk_id}"
     
     # Проверяем уникальность username
     counter = 1

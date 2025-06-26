@@ -254,7 +254,7 @@ async def reports(
     # Получаем данные по участникам (используем contributor_name)
     contributors_query = text(f'''
         SELECT 
-            COALESCE(contributor_name, description) as contributor,
+            COALESCE(contributor_name, description) as description,
             COUNT(*) as contribution_count,
             SUM(price) as total_amount,
             AVG(price) as avg_amount,
@@ -323,7 +323,7 @@ async def contributors(request: Request, current_user: User = Depends(get_curren
     # Получаем сводную информацию по участникам (только утвержденные взносы)
     contributors_query = text('''
         SELECT 
-            COALESCE(contributor_name, description) as contributor,
+            COALESCE(contributor_name, description) as description,
             COUNT(*) as contribution_count,
             SUM(price) as total_amount,
             MAX(data) as last_contribution
