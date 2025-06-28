@@ -443,30 +443,41 @@ async def link_user_accounts(
                 status_code=302
             )
         
-        # Переносим данные с вторичного аккаунта на основной
-        if secondary_user.vk_id and not primary_user.vk_id:
-            primary_user.vk_id = secondary_user.vk_id
-            primary_user.avatar_url = secondary_user.avatar_url or primary_user.avatar_url
-            primary_user.is_whitelisted = secondary_user.is_whitelisted or primary_user.is_whitelisted
+        # Сохраняем данные вторичного аккаунта в переменные
+        secondary_vk_id = secondary_user.vk_id
+        secondary_avatar_url = secondary_user.avatar_url
+        secondary_is_whitelisted = secondary_user.is_whitelisted
+        secondary_email = secondary_user.email
+        secondary_first_name = secondary_user.first_name
+        secondary_last_name = secondary_user.last_name
+        secondary_is_admin = secondary_user.is_admin
         
-        if secondary_user.email and not primary_user.email:
-            primary_user.email = secondary_user.email
+        # Удаляем вторичный аккаунт
+        db.delete(secondary_user)
+        db.commit()
+        
+        # Переносим данные с вторичного аккаунта на основной
+        if secondary_vk_id and not primary_user.vk_id:
+            primary_user.vk_id = secondary_vk_id
+            primary_user.avatar_url = secondary_avatar_url or primary_user.avatar_url
+            primary_user.is_whitelisted = secondary_is_whitelisted or primary_user.is_whitelisted
+        
+        if secondary_email and not primary_user.email:
+            primary_user.email = secondary_email
             
-        if secondary_user.first_name and not primary_user.first_name:
-            primary_user.first_name = secondary_user.first_name
+        if secondary_first_name and not primary_user.first_name:
+            primary_user.first_name = secondary_first_name
             
-        if secondary_user.last_name and not primary_user.last_name:
-            primary_user.last_name = secondary_user.last_name
+        if secondary_last_name and not primary_user.last_name:
+            primary_user.last_name = secondary_last_name
         
         # Переносим права админа (берем максимальный уровень)
-        primary_user.is_admin = max(primary_user.is_admin, secondary_user.is_admin)
+        primary_user.is_admin = max(primary_user.is_admin, secondary_is_admin)
         
         # Обновляем записи бюджета и инвентаря
         db.query(Budget).filter(Budget.user_id == secondary_user.id).update({"user_id": primary_user.id})
         db.query(Inventory).filter(Inventory.created_by_user_id == secondary_user.id).update({"created_by_user_id": primary_user.id})
         
-        # Удаляем вторичный аккаунт
-        db.delete(secondary_user)
         db.commit()
         
         return RedirectResponse(
