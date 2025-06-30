@@ -6,7 +6,7 @@ from sqlalchemy import text, func
 from datetime import date, datetime
 from typing import Optional
 from app.database import get_db
-from app.models.models import Inventory, User
+from app.models.models import Inventory, User, InventoryItemType
 from app.auth import get_current_user_from_cookie, get_admin_user
 from app.file_manager import file_manager
 
@@ -28,8 +28,12 @@ def can_edit_inventory(current_user: User, item: Inventory) -> bool:
         return False  # Уже проверили админа и автора выше
     
     # Для обычных предметов - владелец может редактировать
-    # Для старых записей без created_by_user_id проверяем по имени владельца
-    if item.created_by_user_id is None:
+    # Проверяем owner_user_id
+    if item.owner_user_id == current_user.id:
+        return True
+    
+    # Для старых записей без owner_user_id проверяем по имени владельца
+    if item.owner_user_id is None and item.created_by_user_id is None:
         # Для VK пользователей проверяем полное имя
         if current_user.vk_id:
             user_full_name = f"{current_user.first_name} {current_user.last_name}".strip()
@@ -112,7 +116,12 @@ async def inventory_list(
     })
 
 @router.get("/inventory/add", response_class=HTMLResponse)
-async def add_inventory_page(request: Request, current_user: User = Depends(get_current_user_from_cookie)):
+async def add_inventory_page(
+    request: Request, 
+    current_user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+    owner_preset: bool = Query(False)  # Параметр для автозаполнения владельца
+):
     # Определяем имя пользователя для автозаполнения
     user_display_name = ""
     is_vk_user = bool(current_user.vk_id)
@@ -125,12 +134,17 @@ async def add_inventory_page(request: Request, current_user: User = Depends(get_
     else:  # Обычный пользователь
         user_display_name = current_user.username
     
+    # Получаем типы предметов из справочника
+    item_types = db.query(InventoryItemType).filter(InventoryItemType.is_active == True).order_by(InventoryItemType.sort_order, InventoryItemType.name).all()
+    
     return templates.TemplateResponse("inventory/add.html", {
         "request": request,
         "user": current_user,
         "user_display_name": user_display_name,
         "is_vk_user": is_vk_user,
-        "is_admin": is_admin
+        "is_admin": is_admin,
+        "owner_preset": owner_preset,
+        "item_types": item_types
     })
 
 @router.post("/inventory/add")
@@ -159,11 +173,27 @@ async def add_inventory(
         if image and image.filename:
             image_path = await file_manager.save_inventory_image(image)
         
-        # Если клубный предмет, то владелец всегда "Клуб"
-        final_owner = "Клуб" if is_club_item else owner
+        # Определяем владельца
+        owner_user_id = None
+        final_owner = owner  # Для обратной совместимости оставляем строковое поле
+        
+        if is_club_item:
+            # Клубный предмет - владелец "Клуб", owner_user_id = None
+            final_owner = "Клуб"
+            owner_user_id = None
+        else:
+            # Личный предмет - устанавливаем текущего пользователя как владельца
+            owner_user_id = current_user.id
+            # Для строкового поля используем введенное имя или имя пользователя
+            if not owner.strip():
+                if current_user.vk_id:
+                    final_owner = f"{current_user.first_name} {current_user.last_name}".strip()
+                else:
+                    final_owner = current_user.username
         
         inventory_item = Inventory(
             owner=final_owner,
+            owner_user_id=owner_user_id,
             item_name=item_name,
             item_type=item_type if item_type else None,
             subtype=subtype if subtype else None,

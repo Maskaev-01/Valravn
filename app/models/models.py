@@ -45,7 +45,7 @@ class Inventory(Base):
     __tablename__ = "inventory"
     
     id = Column(Integer, primary_key=True, index=True)
-    owner = Column(Text, nullable=False)
+    owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Владелец (ссылка на пользователя)
     item_name = Column(Text, nullable=False)
     item_type = Column(Text)
     subtype = Column(Text)
@@ -64,6 +64,10 @@ class Inventory(Base):
     is_club_item = Column(Boolean, default=False)    # Клубный ли предмет
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Отношения
+    owner = relationship("User", foreign_keys=[owner_user_id])
+    created_by = relationship("User", foreign_keys=[created_by_user_id])
 
 # Новая таблица для VK whitelist (админы)
 class VKWhitelist(Base):
@@ -75,6 +79,31 @@ class VKWhitelist(Base):
     is_admin = Column(Boolean, default=False)   # Админские права
     added_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)   # ИСПРАВЛЕНИЕ: добавляем SET NULL
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+# НОВЫЕ СПРАВОЧНИКИ
+class BudgetType(Base):
+    """Справочник типов операций бюджета"""
+    __tablename__ = "budget_types"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)  # Название типа
+    description = Column(String, nullable=True)         # Описание
+    is_active = Column(Boolean, default=True)           # Активен ли тип
+    sort_order = Column(Integer, default=0)             # Порядок сортировки
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class InventoryItemType(Base):
+    """Справочник типов предметов инвентаря"""
+    __tablename__ = "inventory_item_types"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)  # Название типа
+    description = Column(String, nullable=True)         # Описание
+    is_active = Column(Boolean, default=True)           # Активен ли тип
+    sort_order = Column(Integer, default=0)             # Порядок сортировки
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 class AccountLinkRequest(Base):
     """Запросы на связывание аккаунтов"""

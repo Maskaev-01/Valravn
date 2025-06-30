@@ -339,6 +339,30 @@ async def profile(
 ):
     """Профиль пользователя с возможностью связывания аккаунтов"""
     
+    # Получаем инвентарь пользователя (последние 6 предметов)
+    from app.models.models import Inventory
+    
+    user_inventory_query = db.query(Inventory)
+    
+    # Фильтруем по owner_user_id или по старому полю owner
+    if current_user.vk_id:
+        # Для VK пользователей ищем по owner_user_id или по полному имени
+        user_full_name = f"{current_user.first_name} {current_user.last_name}".strip()
+        user_inventory_query = user_inventory_query.filter(
+            (Inventory.owner_user_id == current_user.id) |
+            (Inventory.owner == user_full_name) |
+            (Inventory.created_by_user_id == current_user.id)
+        )
+    else:
+        # Для обычных пользователей ищем по owner_user_id или по username
+        user_inventory_query = user_inventory_query.filter(
+            (Inventory.owner_user_id == current_user.id) |
+            (Inventory.owner == current_user.username) |
+            (Inventory.created_by_user_id == current_user.id)
+        )
+    
+    user_inventory = user_inventory_query.order_by(Inventory.created_at.desc()).limit(6).all()
+    
     # Ищем возможные дубликаты для этого пользователя
     potential_matches = []
     
@@ -396,6 +420,7 @@ async def profile(
     return templates.TemplateResponse("profile.html", {
         "request": request,
         "user": current_user,
+        "user_inventory": user_inventory,
         "potential_matches": potential_matches,
         "link_requests": link_requests,
         "success_message": success,

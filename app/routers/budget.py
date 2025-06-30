@@ -329,8 +329,19 @@ async def reports(
     types_results = db.execute(types_query, params).fetchall()
     
     # Получаем список уникальных участников и типов для фильтров (БЕЗОПАСНЫЕ ЗАПРОСЫ)
-    contributors_list_query = text("SELECT DISTINCT COALESCE(contributor_name, description) as contributor FROM budget WHERE type = 'Взнос' AND is_approved = :is_approved ORDER BY contributor")
-    contributors_list = db.execute(contributors_list_query, {"is_approved": True}).fetchall()
+    contributors_list_query = text("""
+        SELECT DISTINCT COALESCE(contributor_name, description) as contributor 
+        FROM budget 
+        WHERE type = :type 
+        AND is_approved = :is_approved 
+        AND COALESCE(contributor_name, description) IS NOT NULL
+        AND TRIM(COALESCE(contributor_name, description)) != ''
+        ORDER BY contributor
+    """)
+    contributors_list = db.execute(contributors_list_query, {
+        "type": "Взнос",
+        "is_approved": True
+    }).fetchall()
     
     types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL AND is_approved = :is_approved ORDER BY type")
     types_list = db.execute(types_list_query, {"is_approved": True}).fetchall()

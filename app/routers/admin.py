@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import date
 from app.database import get_db
-from app.models.models import Budget, User, Inventory, VKWhitelist
+from app.models.models import Budget, User, Inventory, VKWhitelist, AccountLinkRequest, BudgetType, InventoryItemType
 from app.auth import get_admin_user, get_password_hash
+from app.vk_oauth import vk_oauth
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -228,8 +229,27 @@ async def sync_vk_users(
                         # Пользователь с таким username уже есть - обновляем его vk_id
                         if not existing_user.vk_id:
                             existing_user.vk_id = entry.vk_id
-                            existing_user.first_name = entry.username.split()[0] if entry.username.split() else "VK"
-                            existing_user.last_name = " ".join(entry.username.split()[1:]) if len(entry.username.split()) > 1 else "User"
+                            # Получаем данные из VK API если доступно
+                            if vk_oauth.has_service_token():
+                                user_info = await vk_oauth.get_user_info(entry.vk_id)
+                                if user_info:
+                                    existing_user.first_name = user_info['first_name']
+                                    existing_user.last_name = user_info['last_name']
+                                    existing_user.username = f"{user_info['first_name']} {user_info['last_name']}".strip()
+                                    if user_info.get('avatar_url'):
+                                        existing_user.avatar_url = user_info['avatar_url']
+                                else:
+                                    # Используем данные из whitelist
+                                    name_parts = entry.username.split()
+                                    existing_user.first_name = name_parts[0] if name_parts else "VK"
+                                    existing_user.last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else "User"
+                                    existing_user.username = entry.username
+                            else:
+                                # Используем данные из whitelist
+                                name_parts = entry.username.split()
+                                existing_user.first_name = name_parts[0] if name_parts else "VK"
+                                existing_user.last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else "User"
+                                existing_user.username = entry.username
                             existing_user.is_whitelisted = True
                             existing_user.is_admin = 1 if entry.is_admin else 0
                             updated_count += 1
@@ -239,11 +259,45 @@ async def sync_vk_users(
                             continue
                     else:
                         # Создаем нового пользователя
+                        # Получаем данные из VK API если доступно
+                        first_name = "VK"
+                        last_name = "User"
+                        username = f"vk_{entry.vk_id}"
+                        avatar_url = None
+                        
+                        if vk_oauth.has_service_token():
+                            user_info = await vk_oauth.get_user_info(entry.vk_id)
+                            if user_info:
+                                first_name = user_info['first_name']
+                                last_name = user_info['last_name']
+                                username = f"{first_name} {last_name}".strip()
+                                avatar_url = user_info.get('photo_100')
+                            else:
+                                # Используем данные из whitelist
+                                name_parts = entry.username.split()
+                                first_name = name_parts[0] if name_parts else "VK"
+                                last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else "User"
+                                username = entry.username
+                        else:
+                            # Используем данные из whitelist
+                            name_parts = entry.username.split()
+                            first_name = name_parts[0] if name_parts else "VK"
+                            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else "User"
+                            username = entry.username
+                        
+                        # Проверяем уникальность username
+                        counter = 1
+                        base_username = username
+                        while db.query(User).filter(User.username == username).first():
+                            username = f"{base_username}_{counter}"
+                            counter += 1
+                        
                         new_user = User(
                             username=username,
                             vk_id=entry.vk_id,
-                            first_name=entry.username.split()[0] if entry.username.split() else "VK",
-                            last_name=" ".join(entry.username.split()[1:]) if len(entry.username.split()) > 1 else "User",
+                            first_name=first_name,
+                            last_name=last_name,
+                            avatar_url=avatar_url,
                             is_admin=1 if entry.is_admin else 0,
                             is_whitelisted=True,
                             hashed_password=None,  # Explicitly set to None for VK users
@@ -508,4 +562,95 @@ async def link_user_accounts(
         return RedirectResponse(
             url=f"/admin/user-accounts?error=link_failed&message={str(e)}", 
             status_code=302
-        ) 
+        )
+
+# СПРАВОЧНИКИ
+@router.get("/dictionaries", response_class=HTMLResponse)
+async def dictionaries_page(
+    request: Request, 
+    current_user: User = Depends(get_admin_user), 
+    db: Session = Depends(get_db)
+):
+    """Страница управления справочниками"""
+    budget_types = db.query(BudgetType).order_by(BudgetType.sort_order, BudgetType.name).all()
+    inventory_types = db.query(InventoryItemType).order_by(InventoryItemType.sort_order, InventoryItemType.name).all()
+    
+    return templates.TemplateResponse("admin/dictionaries.html", {
+        "request": request,
+        "user": current_user,
+        "budget_types": budget_types,
+        "inventory_types": inventory_types
+    })
+
+@router.post("/dictionaries/budget-types/add")
+async def add_budget_type(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(None),
+    sort_order: int = Form(0),
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Добавить тип операции бюджета"""
+    try:
+        budget_type = BudgetType(
+            name=name.strip(),
+            description=description.strip() if description else None,
+            sort_order=sort_order
+        )
+        db.add(budget_type)
+        db.commit()
+        return RedirectResponse(url="/admin/dictionaries", status_code=302)
+    except Exception as e:
+        db.rollback()
+        # Обработка ошибки дублирования
+        return RedirectResponse(url="/admin/dictionaries?error=duplicate", status_code=302)
+
+@router.post("/dictionaries/inventory-types/add")
+async def add_inventory_type(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(None),
+    sort_order: int = Form(0),
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Добавить тип предмета инвентаря"""
+    try:
+        inventory_type = InventoryItemType(
+            name=name.strip(),
+            description=description.strip() if description else None,
+            sort_order=sort_order
+        )
+        db.add(inventory_type)
+        db.commit()
+        return RedirectResponse(url="/admin/dictionaries", status_code=302)
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(url="/admin/dictionaries?error=duplicate", status_code=302)
+
+@router.post("/dictionaries/budget-types/{type_id}/toggle")
+async def toggle_budget_type(
+    type_id: int,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Активировать/деактивировать тип операции бюджета"""
+    budget_type = db.query(BudgetType).filter(BudgetType.id == type_id).first()
+    if budget_type:
+        budget_type.is_active = not budget_type.is_active
+        db.commit()
+    return RedirectResponse(url="/admin/dictionaries", status_code=302)
+
+@router.post("/dictionaries/inventory-types/{type_id}/toggle")
+async def toggle_inventory_type(
+    type_id: int,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Активировать/деактивировать тип предмета инвентаря"""
+    inventory_type = db.query(InventoryItemType).filter(InventoryItemType.id == type_id).first()
+    if inventory_type:
+        inventory_type.is_active = not inventory_type.is_active
+        db.commit()
+    return RedirectResponse(url="/admin/dictionaries", status_code=302) 
