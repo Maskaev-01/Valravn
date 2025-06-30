@@ -339,29 +339,48 @@ async def profile(
 ):
     """Профиль пользователя с возможностью связывания аккаунтов"""
     
-    # Получаем инвентарь пользователя (последние 6 предметов)
-    from app.models.models import Inventory
-    
-    user_inventory_query = db.query(Inventory)
-    
-    # Фильтруем по owner_user_id или по старому полю owner
-    if current_user.vk_id:
-        # Для VK пользователей ищем по owner_user_id или по полному имени
-        user_full_name = f"{current_user.first_name} {current_user.last_name}".strip()
-        user_inventory_query = user_inventory_query.filter(
-            (Inventory.owner_user_id == current_user.id) |
-            (Inventory.owner == user_full_name) |
-            (Inventory.created_by_user_id == current_user.id)
-        )
-    else:
-        # Для обычных пользователей ищем по owner_user_id или по username
-        user_inventory_query = user_inventory_query.filter(
-            (Inventory.owner_user_id == current_user.id) |
-            (Inventory.owner == current_user.username) |
-            (Inventory.created_by_user_id == current_user.id)
-        )
-    
-    user_inventory = user_inventory_query.order_by(Inventory.created_at.desc()).limit(6).all()
+    try:
+        # Получаем инвентарь пользователя (последние 6 предметов)
+        from app.models.models import Inventory
+        
+        user_inventory_query = db.query(Inventory)
+        
+        # Фильтруем по owner_user_id или по старому полю owner (с проверкой существования поля)
+        try:
+            if current_user.vk_id:
+                # Для VK пользователей ищем по owner_user_id или по полному имени
+                user_full_name = f"{current_user.first_name} {current_user.last_name}".strip()
+                user_inventory_query = user_inventory_query.filter(
+                    (Inventory.owner_user_id == current_user.id) |
+                    (Inventory.owner == user_full_name) |
+                    (Inventory.created_by_user_id == current_user.id)
+                )
+            else:
+                # Для обычных пользователей ищем по owner_user_id или по username
+                user_inventory_query = user_inventory_query.filter(
+                    (Inventory.owner_user_id == current_user.id) |
+                    (Inventory.owner == current_user.username) |
+                    (Inventory.created_by_user_id == current_user.id)
+                )
+        except Exception:
+            # Если поле owner_user_id еще не существует, используем только старые поля
+            if current_user.vk_id:
+                user_full_name = f"{current_user.first_name} {current_user.last_name}".strip()
+                user_inventory_query = user_inventory_query.filter(
+                    (Inventory.owner == user_full_name) |
+                    (Inventory.created_by_user_id == current_user.id)
+                )
+            else:
+                user_inventory_query = user_inventory_query.filter(
+                    (Inventory.owner == current_user.username) |
+                    (Inventory.created_by_user_id == current_user.id)
+                )
+        
+        user_inventory = user_inventory_query.order_by(Inventory.created_at.desc()).limit(6).all()
+    except Exception as e:
+        # Если ошибка с инвентарем, устанавливаем пустой список
+        user_inventory = []
+        print(f"Error loading user inventory: {e}")
     
     # Ищем возможные дубликаты для этого пользователя
     potential_matches = []

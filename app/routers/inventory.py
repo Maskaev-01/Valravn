@@ -53,48 +53,92 @@ async def inventory_list(
     db: Session = Depends(get_db),
     owner: Optional[str] = Query(None),
     item_type: Optional[str] = Query(None),
-    material: Optional[str] = Query(None),  # Новый фильтр по материалу
+    material: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
-    club_items: Optional[str] = Query(None)  # Изменяем тип на str для корректной обработки
+    club_items: Optional[str] = Query(None)
 ):
-    # Базовый запрос
-    query = db.query(Inventory)
+    # Базовый запрос с LEFT JOIN для получения данных владельца
+    query = db.query(Inventory).outerjoin(User, Inventory.owner_user_id == User.id)
     
     # Применяем фильтры
     if owner and owner != "all":
-        query = query.filter(Inventory.owner == owner)
+        # Поиск по имени пользователя (для обратной совместимости со старыми записями)
+        query = query.filter(
+            (Inventory.owner == owner) |  # Старые записи
+            (User.username == owner) |   # По username
+            (func.concat(User.first_name, ' ', User.last_name) == owner)  # По полному имени VK
+        )
     if item_type and item_type != "all":
         query = query.filter(Inventory.item_type == item_type)
     if material and material != "all":
         query = query.filter(Inventory.material == material)
     
-    # Исправленная обработка фильтра клубных предметов
-    if club_items and club_items.strip():  # Проверяем что параметр не пустой
+    # Обработка фильтра клубных предметов
+    if club_items and club_items.strip():
         if club_items.lower() == "true":
             query = query.filter(Inventory.is_club_item == True)
         elif club_items.lower() == "false":
             query = query.filter(Inventory.is_club_item == False)
-        # Если club_items не "true" и не "false", игнорируем фильтр
     
     if search:
         query = query.filter(
             (Inventory.item_name.ilike(f"%{search}%")) |
-            (Inventory.owner.ilike(f"%{search}%")) |
+            (Inventory.owner.ilike(f"%{search}%")) |  # Поиск по старому полю
+            (User.username.ilike(f"%{search}%")) |    # Поиск по username
+            (func.concat(User.first_name, ' ', User.last_name).ilike(f"%{search}%")) |  # Поиск по полному имени
             (Inventory.notes.ilike(f"%{search}%")) |
             (Inventory.material.ilike(f"%{search}%"))
         )
     
-    inventory_items = query.order_by(Inventory.owner, Inventory.item_name).all()
+    # Исправленный ORDER BY - убираем ссылку на users без JOIN
+    inventory_items = query.order_by(
+        Inventory.owner.nullslast(),
+        Inventory.item_name
+    ).all()
     
-    # Получаем списки для фильтров
-    owners_list = db.query(Inventory.owner).distinct().order_by(Inventory.owner).all()
-    types_list = db.query(Inventory.item_type).distinct().filter(Inventory.item_type.isnot(None)).order_by(Inventory.item_type).all()
+    # Получаем списки для фильтров (включая как старые, так и новые записи)
+    owners_query = text('''
+        SELECT DISTINCT owner_name 
+        FROM (
+            SELECT COALESCE(u.username, i.owner) as owner_name
+            FROM inventory i
+            LEFT JOIN users u ON i.owner_user_id = u.id
+            WHERE COALESCE(u.username, i.owner) IS NOT NULL
+            UNION
+            SELECT CONCAT(u.first_name, ' ', u.last_name) as owner_name
+            FROM inventory i
+            JOIN users u ON i.owner_user_id = u.id
+            WHERE u.vk_id IS NOT NULL AND u.first_name IS NOT NULL
+        ) owners
+        ORDER BY owner_name
+    ''')
+    owners_list = db.execute(owners_query).fetchall()
+    
+    # Получаем типы предметов из справочника
+    item_types_list = db.query(InventoryItemType).filter(InventoryItemType.is_active == True).order_by(InventoryItemType.sort_order, InventoryItemType.name).all()
+    
+    # Если справочник пустой, берем из существующих записей
+    if not item_types_list:
+        types_list = db.query(Inventory.item_type).distinct().filter(Inventory.item_type.isnot(None)).order_by(Inventory.item_type).all()
+    else:
+        types_list = [(item_type.name,) for item_type in item_types_list]
+    
     materials_list = db.query(Inventory.material).distinct().filter(Inventory.material.isnot(None)).order_by(Inventory.material).all()
     
     # Статистика
     total_items = db.query(func.count(Inventory.id)).scalar()
     club_items_count = db.query(func.count(Inventory.id)).filter(Inventory.is_club_item == True).scalar()
-    unique_owners = db.query(func.count(func.distinct(Inventory.owner))).scalar()
+    
+    # Подсчет уникальных владельцев (учитываем и старые и новые записи)
+    unique_owners_query = text('''
+        SELECT COUNT(DISTINCT owner_name) 
+        FROM (
+            SELECT COALESCE(u.username, i.owner) as owner_name
+            FROM inventory i
+            LEFT JOIN users u ON i.owner_user_id = u.id
+        ) owners
+    ''')
+    unique_owners = db.execute(unique_owners_query).scalar()
     
     return templates.TemplateResponse("inventory/list.html", {
         "request": request,
