@@ -600,7 +600,7 @@ async def approve_all_contributions(
         )
 
 # СПРАВОЧНИКИ
-@router.get("/dictionaries", response_class=HTMLResponse)
+@router.get("/admin/dictionaries", response_class=HTMLResponse)
 async def dictionaries_page(
     request: Request, 
     current_user: User = Depends(get_admin_user), 
@@ -617,7 +617,7 @@ async def dictionaries_page(
         "inventory_types": inventory_types
     })
 
-@router.post("/dictionaries/budget-types/add")
+@router.post("/admin/dictionaries/budget-types/add")
 async def add_budget_type(
     request: Request,
     name: str = Form(...),
@@ -641,7 +641,7 @@ async def add_budget_type(
         # Обработка ошибки дублирования
         return RedirectResponse(url="/admin/dictionaries?error=duplicate", status_code=302)
 
-@router.post("/dictionaries/inventory-types/add")
+@router.post("/admin/dictionaries/inventory-types/add")
 async def add_inventory_type(
     request: Request,
     name: str = Form(...),
@@ -664,7 +664,7 @@ async def add_inventory_type(
         db.rollback()
         return RedirectResponse(url="/admin/dictionaries?error=duplicate", status_code=302)
 
-@router.post("/dictionaries/budget-types/{type_id}/toggle")
+@router.post("/admin/dictionaries/budget-types/{type_id}/toggle")
 async def toggle_budget_type(
     type_id: int,
     current_user: User = Depends(get_admin_user),
@@ -677,7 +677,7 @@ async def toggle_budget_type(
         db.commit()
     return RedirectResponse(url="/admin/dictionaries", status_code=302)
 
-@router.post("/dictionaries/inventory-types/{type_id}/toggle")
+@router.post("/admin/dictionaries/inventory-types/{type_id}/toggle")
 async def toggle_inventory_type(
     type_id: int,
     current_user: User = Depends(get_admin_user),

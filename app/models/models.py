@@ -45,6 +45,7 @@ class Inventory(Base):
     __tablename__ = "inventory"
     
     id = Column(Integer, primary_key=True, index=True)
+    owner = Column(Text)  # Строковое поле для обратной совместимости
     owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Владелец (ссылка на пользователя)
     item_name = Column(Text, nullable=False)
     item_type = Column(Text)
@@ -66,7 +67,7 @@ class Inventory(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Отношения
-    owner = relationship("User", foreign_keys=[owner_user_id])
+    owner_user = relationship("User", foreign_keys=[owner_user_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
 
 # Новая таблица для VK whitelist (админы)

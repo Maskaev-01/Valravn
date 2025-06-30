@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query, Fil
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func
+from sqlalchemy import text, func, case
 from datetime import date, datetime
 from typing import Optional
 from app.database import get_db
@@ -91,10 +91,29 @@ async def inventory_list(
         )
     
     # Исправленный ORDER BY - простая сортировка без nullslast
-    inventory_items = query.order_by(
+    inventory_items_raw = query.order_by(
         Inventory.owner,
         Inventory.item_name
     ).all()
+    
+    # Обрабатываем результаты для правильного отображения владельца
+    inventory_items = []
+    for item in inventory_items_raw:
+        # Создаем копию объекта с правильным отображением владельца
+        if hasattr(item, 'owner_user') and item.owner_user:
+            # Есть связанный пользователь
+            if item.owner_user.vk_id:
+                # VK пользователь - показываем полное имя
+                display_owner = f"{item.owner_user.first_name} {item.owner_user.last_name}".strip()
+                if not display_owner:
+                    display_owner = item.owner_user.username
+            else:
+                # Обычный пользователь - показываем username
+                display_owner = item.owner_user.username
+            # Временно заменяем owner для отображения
+            item.owner = display_owner
+        # Если нет связанного пользователя, используем существующий owner
+        inventory_items.append(item)
     
     # Получаем списки для фильтров (включая как старые, так и новые записи)
     owners_query = text('''
