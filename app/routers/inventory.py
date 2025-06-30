@@ -227,9 +227,13 @@ async def add_inventory(
 ):
     try:
         # Обрабатываем изображение если есть
-        image_path = None
+        image_data = None
+        image_filename = None
+        image_size = None
+        
         if image and image.filename:
-            image_path = await file_manager.save_inventory_image(image)
+            # Сохраняем в base64 для надежности
+            image_data, image_filename, image_size = await file_manager.save_inventory_image_to_base64(image)
         
         # Определяем владельца
         owner_user_id = None
@@ -280,7 +284,10 @@ async def add_inventory(
             burial_number=burial_number if burial_number else None,
             notes=notes if notes else None,
             is_club_item=is_club_item,
-            image_path=image_path,
+            # Новые поля для base64 хранения
+            image_data=image_data,
+            image_filename=image_filename,
+            image_size=image_size,
             created_by_user_id=current_user.id,
             created_at=datetime.utcnow()
         )
@@ -366,16 +373,25 @@ async def edit_inventory(
     
     try:
         # Обрабатываем изображение
-        if remove_image and item.image_path:
-            # Удаляем старое изображение
-            file_manager.delete_file(item.image_path)
-            item.image_path = None
+        if remove_image:
+            # Удаляем изображение из БД
+            item.image_data = None
+            item.image_filename = None
+            item.image_size = None
+            # Также удаляем старый файл если есть
+            if item.image_path:
+                file_manager.delete_file(item.image_path)
+                item.image_path = None
         elif image and image.filename:
+            # Сохраняем новое изображение в base64
+            image_data, image_filename, image_size = await file_manager.save_inventory_image_to_base64(image)
+            item.image_data = image_data
+            item.image_filename = image_filename
+            item.image_size = image_size
             # Удаляем старое изображение если есть
             if item.image_path:
                 file_manager.delete_file(item.image_path)
-            # Сохраняем новое
-            item.image_path = await file_manager.save_inventory_image(image)
+                item.image_path = None
         
         # Если клубный предмет, то владелец всегда "Клуб"
         final_owner = "Клуб" if is_club_item else owner

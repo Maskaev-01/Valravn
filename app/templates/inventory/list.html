@@ -209,15 +209,25 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10">
-                                        {% if item.image_path %}
-                                        <img src="{{ item.image_path }}" 
-                                             alt="{{ item.item_name }}" 
-                                             class="h-10 w-10 rounded-lg object-cover cursor-pointer"
-                                             onclick="openImageModal('{{ item.image_path }}', '{{ item.item_name }}')">
+                                        {% set has_image = item.image_data or item.image_path %}
+                                        {% if has_image %}
+                                            {% if item.image_data %}
+                                                <!-- Новый формат: base64 из БД -->
+                                                <img class="h-10 w-10 rounded-full object-cover cursor-pointer" 
+                                                     src="data:image/webp;base64,{{ item.image_data }}" 
+                                                     alt="{{ item.item_name }}"
+                                                     onclick="openImageModal('data:image/webp;base64,{{ item.image_data }}', '{{ item.item_name }}')">
+                                            {% elif item.image_path %}
+                                                <!-- Старый формат: файл -->
+                                                <img class="h-10 w-10 rounded-full object-cover cursor-pointer" 
+                                                     src="{{ item.image_path }}" 
+                                                     alt="{{ item.item_name }}"
+                                                     onclick="openImageModal('{{ item.image_path }}', '{{ item.item_name }}')">
+                                            {% endif %}
                                         {% else %}
-                                        <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                                            <i class="fas fa-box text-purple-600 text-sm"></i>
-                                        </div>
+                                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <i class="fas fa-image text-gray-400"></i>
+                                            </div>
                                         {% endif %}
                                     </div>
                                     <div class="ml-3">

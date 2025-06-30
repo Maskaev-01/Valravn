@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Date, Float, Text, Boo
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -27,52 +28,56 @@ class Budget(Base):
     __tablename__ = "budget"
     
     id = Column(Integer, primary_key=True, index=True)
-    price = Column(Float)
-    description = Column(String)
-    data = Column(Date)  # используем оригинальное название поля
-    type = Column(String)
+    price = Column(Float, nullable=False)
+    description = Column(Text, nullable=False)
+    data = Column(Date, nullable=False, index=True)
+    type = Column(String(50), nullable=False, default="Взнос", index=True)
+    contributor_name = Column(String(100), nullable=True, index=True)
+    is_approved = Column(Boolean, default=False, nullable=False, index=True)
+    screenshot_path = Column(String(500), nullable=True)  # Оставляем для обратной совместимости
+    screenshot_data = Column(Text, nullable=True)  # Новое поле для хранения base64 скриншота
+    screenshot_filename = Column(String(255), nullable=True)  # Оригинальное имя файла
+    screenshot_size = Column(Integer, nullable=True)  # Размер скриншота в байтах
+    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Новые поля для модерации
-    screenshot_path = Column(String, nullable=True)  # Путь к скриншоту перевода
-    is_approved = Column(Boolean, default=False)     # Одобрен ли взнос
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: добавляем SET NULL
-    contributor_name = Column(String, nullable=True)  # Имя из VK или введенное вручную
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    approved_at = Column(DateTime(timezone=True), nullable=True)
-    approved_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: добавляем SET NULL
+    # Relationships
+    created_by_user = relationship("User", back_populates="budget_entries")
 
 class Inventory(Base):
     __tablename__ = "inventory"
     
     id = Column(Integer, primary_key=True, index=True)
-    owner = Column(Text)  # Строковое поле для обратной совместимости
-    owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Владелец (ссылка на пользователя)
-    item_name = Column(Text, nullable=False)
-    item_type = Column(Text)  # Старое поле - оставляем для обратной совместимости
-    item_type_id = Column(Integer, ForeignKey("inventory_item_types.id", ondelete="SET NULL"), nullable=True)  # Новое поле
-    subtype = Column(Text)
-    material = Column(Text)  # Старое поле - оставляем для обратной совместимости
-    material_type_id = Column(Integer, ForeignKey("inventory_material_types.id", ondelete="SET NULL"), nullable=True)  # Новое поле
-    color = Column(Text)
-    size = Column(Text)
-    find_type = Column(Text)
-    region = Column(Text)
-    place = Column(Text)
-    burial_number = Column(Text)
-    notes = Column(Text)
+    owner = Column(String(100), nullable=False, index=True)
+    owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    item_name = Column(String(200), nullable=False, index=True)
+    item_type = Column(String(100), nullable=True, index=True)
+    item_type_id = Column(Integer, ForeignKey("inventory_item_types.id", ondelete="SET NULL"), nullable=True)
+    subtype = Column(String(100), nullable=True)
+    material = Column(String(100), nullable=True, index=True)
+    material_type_id = Column(Integer, ForeignKey("inventory_material_types.id", ondelete="SET NULL"), nullable=True)
+    color = Column(String(50), nullable=True)
+    size = Column(String(50), nullable=True)
+    find_type = Column(String(100), nullable=True)
+    region = Column(String(100), nullable=True)
+    place = Column(String(200), nullable=True)
+    burial_number = Column(String(50), nullable=True)
+    notes = Column(Text, nullable=True)
+    is_club_item = Column(Boolean, default=False, nullable=False)
+    image_path = Column(String(500), nullable=True)  # Оставляем для обратной совместимости
+    image_data = Column(Text, nullable=True)  # Новое поле для хранения base64 изображения
+    image_filename = Column(String(255), nullable=True)  # Оригинальное имя файла
+    image_size = Column(Integer, nullable=True)  # Размер изображения в байтах
+    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Новые поля
-    image_path = Column(String, nullable=True)        # Путь к фотографии предмета
-    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: добавляем SET NULL
-    is_club_item = Column(Boolean, default=False)    # Клубный ли предмет
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Отношения
-    owner_user = relationship("User", foreign_keys=[owner_user_id])
-    created_by = relationship("User", foreign_keys=[created_by_user_id])
-    item_type_ref = relationship("InventoryItemType", foreign_keys=[item_type_id])
-    material_type_ref = relationship("InventoryMaterialType", foreign_keys=[material_type_id])
+    # Relationships
+    owner_user = relationship("User", foreign_keys=[owner_user_id], back_populates="owned_inventory")
+    created_by_user = relationship("User", foreign_keys=[created_by_user_id])
+    item_type_ref = relationship("InventoryItemType", back_populates="inventory_items")
+    material_type_ref = relationship("InventoryMaterialType", back_populates="inventory_items")
 
 # Новая таблица для VK whitelist (админы)
 class VKWhitelist(Base):

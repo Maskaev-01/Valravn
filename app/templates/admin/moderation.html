@@ -45,15 +45,28 @@
                             </div>
                             
                             <div>
-                                {% if contribution.screenshot_path %}
+                                {% set has_screenshot = contribution.screenshot_data or contribution.screenshot_path %}
+                                {% if has_screenshot %}
                                 <div class="mb-4">
                                     <p class="text-sm font-medium text-gray-700 mb-2">Скриншот перевода:</p>
                                     <div class="border rounded-lg overflow-hidden">
-                                        <img src="{{ contribution.screenshot_path }}" 
-                                             alt="Скриншот перевода" 
-                                             class="w-full h-48 object-cover cursor-pointer"
-                                             onclick="openImageModal('{{ contribution.screenshot_path }}')">
+                                        {% if contribution.screenshot_data %}
+                                            <!-- Новый формат: base64 из БД -->
+                                            <img src="data:image/webp;base64,{{ contribution.screenshot_data }}" 
+                                                 alt="Скриншот перевода" 
+                                                 class="w-full h-48 object-cover cursor-pointer"
+                                                 onclick="openImageModal('data:image/webp;base64,{{ contribution.screenshot_data }}')">
+                                        {% elif contribution.screenshot_path %}
+                                            <!-- Старый формат: файл -->
+                                            <img src="{{ contribution.screenshot_path }}" 
+                                                 alt="Скриншот перевода" 
+                                                 class="w-full h-48 object-cover cursor-pointer"
+                                                 onclick="openImageModal('{{ contribution.screenshot_path }}')">
+                                        {% endif %}
                                     </div>
+                                    {% if contribution.screenshot_filename %}
+                                    <p class="text-xs text-gray-400 mt-1">{{ contribution.screenshot_filename }}</p>
+                                    {% endif %}
                                 </div>
                                 {% else %}
                                 <div class="mb-4">

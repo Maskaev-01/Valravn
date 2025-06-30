@@ -80,28 +80,18 @@ async def add_contribution(
     db: Session = Depends(get_db)
 ):
     try:
-        # ДОБАВЛЯЕМ ВАЛИДАЦИЮ ДАННЫХ
-        # Проверяем сумму
+        # Валидация данных
         if price <= 0:
-            raise HTTPException(status_code=400, detail="Сумма взноса должна быть положительной")
+            raise HTTPException(status_code=400, detail="Сумма должна быть положительной")
         
-        if price > 1000000:  # Максимум 1 миллион
-            raise HTTPException(status_code=400, detail="Сумма взноса слишком большая (максимум 1,000,000 ₽)")
+        if price > 1000000:
+            raise HTTPException(status_code=400, detail="Сумма слишком большая (максимум 1,000,000)")
         
-        # Проверяем описание
-        if not description or len(description.strip()) < 3:
+        if len(description) < 3:
             raise HTTPException(status_code=400, detail="Описание должно содержать минимум 3 символа")
         
         if len(description) > 500:
             raise HTTPException(status_code=400, detail="Описание слишком длинное (максимум 500 символов)")
-        
-        # Проверяем дату
-        if contribution_date > date.today():
-            raise HTTPException(status_code=400, detail="Дата взноса не может быть в будущем")
-        
-        from datetime import timedelta
-        if contribution_date < date.today() - timedelta(days=365):
-            raise HTTPException(status_code=400, detail="Дата взноса не может быть старше года")
         
         # Определяем имя участника
         if current_user.vk_id and not contributor_name:
@@ -119,7 +109,10 @@ async def add_contribution(
             raise HTTPException(status_code=400, detail="Имя участника слишком длинное (максимум 100 символов)")
         
         # Обрабатываем скриншот если есть
-        screenshot_path = None
+        screenshot_data = None
+        screenshot_filename = None
+        screenshot_size = None
+        
         if screenshot and screenshot.filename:
             # Проверяем размер файла (максимум 20MB)
             if hasattr(screenshot, 'size') and screenshot.size > 20 * 1024 * 1024:
@@ -130,48 +123,47 @@ async def add_contribution(
             if screenshot.content_type not in allowed_types:
                 raise HTTPException(status_code=400, detail="Поддерживаются только изображения (JPEG, PNG, GIF, WebP)")
             
-            screenshot_path = await file_manager.save_screenshot(screenshot)
+            # Сохраняем в base64 для надежности
+            screenshot_data, screenshot_filename, screenshot_size = await file_manager.save_screenshot_to_base64(screenshot)
         
-        # Создаем новый взнос
+        # Создаем запись в БД
         budget_entry = Budget(
-            description=description.strip(),
             price=price,
+            description=description,
             data=contribution_date,
             type="Взнос",
-            contributor_name=contributor_name.strip(),
-            user_id=current_user.id,
-            screenshot_path=screenshot_path,
-            is_approved=False,  # Требует модерации
+            contributor_name=contributor_name,
+            is_approved=False,  # По умолчанию не одобрено
+            # Новые поля для base64 хранения
+            screenshot_data=screenshot_data,
+            screenshot_filename=screenshot_filename,
+            screenshot_size=screenshot_size,
+            created_by_user_id=current_user.id,
             created_at=datetime.utcnow()
         )
         
         db.add(budget_entry)
         db.commit()
-        db.refresh(budget_entry)
         
-        return templates.TemplateResponse("add_contribution.html", {
-            "request": request,
-            "user": current_user,
-            "user_name": contributor_name,
-            "is_vk_user": bool(current_user.vk_id),
-            "success": "Взнос отправлен на модерацию. После проверки администратором он будет добавлен в систему."
-        })
+        # Перенаправляем на страницу с сообщением об успехе
+        return RedirectResponse(url="/dashboard?success=contribution_added", status_code=302)
         
     except HTTPException as e:
+        # Получаем типы бюджета для формы
+        budget_types = db.query(BudgetType).order_by(BudgetType.name).all()
         return templates.TemplateResponse("add_contribution.html", {
             "request": request,
             "user": current_user,
-            "user_name": contributor_name or "",
-            "is_vk_user": bool(current_user.vk_id),
+            "budget_types": budget_types,
             "error": e.detail
         })
     except Exception as e:
-        db.rollback()  # ДОБАВЛЯЕМ ROLLBACK при ошибке
+        # Получаем типы бюджета для формы
+        budget_types = db.query(BudgetType).order_by(BudgetType.name).all()
         return templates.TemplateResponse("add_contribution.html", {
             "request": request,
             "user": current_user,
-            "user_name": contributor_name or "",
-            "is_vk_user": bool(current_user.vk_id),
+            "budget_types": budget_types,
             "error": f"Произошла ошибка: {str(e)}"
         })
 

@@ -136,20 +136,33 @@
                                 <i class="fas fa-camera text-gray-400 mr-2"></i>Фотография предмета
                             </label>
                             
-                            {% if item.image_path %}
+                            {% set has_image = item.image_data or item.image_path %}
+                            {% if has_image %}
                             <div class="mb-4">
                                 <p class="text-sm text-gray-600 mb-2">Текущая фотография:</p>
                                 <div class="relative inline-block">
-                                    <img src="{{ item.image_path }}" 
-                                         alt="{{ item.item_name }}" 
-                                         class="h-32 w-auto object-cover border rounded-lg cursor-pointer"
-                                         onclick="openImageModal('{{ item.image_path }}')">
+                                    {% if item.image_data %}
+                                        <!-- Новый формат: base64 из БД -->
+                                        <img src="data:image/webp;base64,{{ item.image_data }}" 
+                                             alt="{{ item.item_name }}" 
+                                             class="h-32 w-auto object-cover border rounded-lg cursor-pointer"
+                                             onclick="openImageModal('data:image/webp;base64,{{ item.image_data }}')">
+                                    {% elif item.image_path %}
+                                        <!-- Старый формат: файл -->
+                                        <img src="{{ item.image_path }}" 
+                                             alt="{{ item.item_name }}" 
+                                             class="h-32 w-auto object-cover border rounded-lg cursor-pointer"
+                                             onclick="openImageModal('{{ item.image_path }}')">
+                                    {% endif %}
                                     <div class="mt-2">
                                         <label class="flex items-center">
                                             <input type="checkbox" name="remove_image" value="true" class="rounded border-gray-300 text-red-600">
                                             <span class="ml-2 text-sm text-red-600">Удалить текущее изображение</span>
                                         </label>
                                     </div>
+                                    {% if item.image_filename %}
+                                    <p class="text-xs text-gray-400 mt-1">{{ item.image_filename }}</p>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endif %}
@@ -161,10 +174,10 @@
                                    onchange="previewImage(this)"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                             <p class="mt-1 text-sm text-gray-500">
-                                {% if item.image_path %}
-                                Загрузите новое изображение для замены текущего (JPEG, PNG, WebP). Максимальный размер: 10MB
+                                {% if has_image %}
+                                Загрузите новое изображение для замены текущего (JPEG, PNG, WebP). Максимальный размер: 20MB
                                 {% else %}
-                                Загрузите фотографию предмета (JPEG, PNG, WebP). Максимальный размер: 10MB
+                                Загрузите фотографию предмета (JPEG, PNG, WebP). Максимальный размер: 20MB
                                 {% endif %}
                             </p>
                             

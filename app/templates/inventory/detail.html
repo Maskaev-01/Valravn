@@ -175,7 +175,8 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Item Image -->
-            {% if item.image_path %}
+            {% set has_image = item.image_data or item.image_path %}
+            {% if has_image %}
             <div class="bg-white shadow-lg rounded-lg border border-gray-200">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -183,11 +184,23 @@
                         Фотография предмета
                     </h3>
                     <div class="text-center">
-                        <img src="{{ item.image_path }}" 
-                             alt="{{ item.item_name }}" 
-                             class="w-full h-auto rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                             onclick="openImageModal('{{ item.image_path }}', '{{ item.item_name }}')">
+                        {% if item.image_data %}
+                            <!-- Новый формат: base64 из БД -->
+                            <img src="data:image/webp;base64,{{ item.image_data }}" 
+                                 alt="{{ item.item_name }}" 
+                                 class="w-full h-auto rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                                 onclick="openImageModal('data:image/webp;base64,{{ item.image_data }}', '{{ item.item_name }}')">
+                        {% elif item.image_path %}
+                            <!-- Старый формат: файл -->
+                            <img src="{{ item.image_path }}" 
+                                 alt="{{ item.item_name }}" 
+                                 class="w-full h-auto rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                                 onclick="openImageModal('{{ item.image_path }}', '{{ item.item_name }}')">
+                        {% endif %}
                         <p class="text-xs text-gray-500 mt-2">Нажмите для увеличения</p>
+                        {% if item.image_filename %}
+                        <p class="text-xs text-gray-400 mt-1">{{ item.image_filename }}</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
