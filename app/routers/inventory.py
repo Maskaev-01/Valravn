@@ -297,12 +297,14 @@ async def add_inventory(
         return RedirectResponse(url="/inventory", status_code=302)
         
     except HTTPException as e:
+        db.rollback()  # Откатываем транзакцию при ошибке
         return templates.TemplateResponse("inventory/add.html", {
             "request": request,
             "user": current_user,
             "error": e.detail
         })
     except Exception as e:
+        db.rollback()  # Откатываем транзакцию при ошибке
         return templates.TemplateResponse("inventory/add.html", {
             "request": request,
             "user": current_user,
@@ -416,6 +418,7 @@ async def edit_inventory(
         return RedirectResponse(url="/inventory", status_code=302)
         
     except HTTPException as e:
+        db.rollback()  # Откатываем транзакцию при ошибке
         return templates.TemplateResponse("inventory/edit.html", {
             "request": request,
             "user": current_user,
@@ -423,6 +426,7 @@ async def edit_inventory(
             "error": e.detail
         })
     except Exception as e:
+        db.rollback()  # Откатываем транзакцию при ошибке
         return templates.TemplateResponse("inventory/edit.html", {
             "request": request,
             "user": current_user,

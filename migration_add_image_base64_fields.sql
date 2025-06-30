@@ -7,16 +7,18 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS image_data TEXT;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS image_filename VARCHAR(255);
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS image_size INTEGER;
 
--- Добавляем индекс для поиска предметов с изображениями
-CREATE INDEX IF NOT EXISTS idx_inventory_has_image ON inventory(image_data) WHERE image_data IS NOT NULL;
+-- НЕ создаем индекс на image_data - он может превышать лимит PostgreSQL 8191 байт
+-- Вместо этого создаем частичный индекс только на ID для быстрого поиска
+CREATE INDEX IF NOT EXISTS idx_inventory_has_image_partial ON inventory(id) WHERE image_data IS NOT NULL;
 
 -- Добавляем поля для хранения скриншотов бюджета в base64
 ALTER TABLE budget ADD COLUMN IF NOT EXISTS screenshot_data TEXT;
 ALTER TABLE budget ADD COLUMN IF NOT EXISTS screenshot_filename VARCHAR(255);
 ALTER TABLE budget ADD COLUMN IF NOT EXISTS screenshot_size INTEGER;
 
--- Добавляем индекс для поиска взносов со скриншотами
-CREATE INDEX IF NOT EXISTS idx_budget_has_screenshot ON budget(screenshot_data) WHERE screenshot_data IS NOT NULL;
+-- НЕ создаем индекс на screenshot_data - он может превышать лимит PostgreSQL 8191 байт
+-- Вместо этого создаем частичный индекс только на ID для быстрого поиска
+CREATE INDEX IF NOT EXISTS idx_budget_has_screenshot_partial ON budget(id) WHERE screenshot_data IS NOT NULL;
 
 -- Добавляем комментарии к полям
 COMMENT ON COLUMN inventory.image_data IS 'Base64 encoded image data (WebP format)';

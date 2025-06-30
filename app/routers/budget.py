@@ -148,6 +148,7 @@ async def add_contribution(
         return RedirectResponse(url="/dashboard?success=contribution_added", status_code=302)
         
     except HTTPException as e:
+        db.rollback()  # Откатываем транзакцию при ошибке
         # Получаем типы бюджета для формы
         budget_types = db.query(BudgetType).order_by(BudgetType.name).all()
         return templates.TemplateResponse("add_contribution.html", {
@@ -157,6 +158,7 @@ async def add_contribution(
             "error": e.detail
         })
     except Exception as e:
+        db.rollback()  # Откатываем транзакцию при ошибке
         # Получаем типы бюджета для формы
         budget_types = db.query(BudgetType).order_by(BudgetType.name).all()
         return templates.TemplateResponse("add_contribution.html", {
