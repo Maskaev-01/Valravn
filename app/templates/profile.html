@@ -351,21 +351,24 @@ function toggleUsernameEdit() {
 
 // Показываем сообщения об ошибках/успехе
 document.addEventListener('DOMContentLoaded', function() {
+    // eslint-disable-next-line
     {% if success_message %}
-    const successAlert = document.createElement('div');
-    successAlert.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
-    successAlert.innerHTML = '<i class="fas fa-check-circle mr-2"></i>{{ success_message }}';
-    document.body.appendChild(successAlert);
-    setTimeout(function() { successAlert.remove(); }, 5000);
+    showAlert('success', '{{ success_message|e }}');
     {% endif %}
-
+    // eslint-disable-next-line
     {% if error_message %}
-    const errorAlert = document.createElement('div');
-    errorAlert.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
-    errorAlert.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>{{ error_message }}';
-    document.body.appendChild(errorAlert);
-    setTimeout(function() { errorAlert.remove(); }, 7000);
+    showAlert('error', '{{ error_message|e }}');
     {% endif %}
 });
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    const isSuccess = type === 'success';
+    alert.className = 'fixed top-4 right-4 px-4 py-3 rounded z-50 ' + 
+        (isSuccess ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700');
+    alert.innerHTML = '<i class="fas fa-' + (isSuccess ? 'check' : 'exclamation') + '-circle mr-2"></i>' + message;
+    document.body.appendChild(alert);
+    setTimeout(function() { alert.remove(); }, isSuccess ? 5000 : 7000);
+}
 </script>
 {% endblock %} 

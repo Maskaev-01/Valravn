@@ -90,9 +90,9 @@ async def inventory_list(
             (Inventory.material.ilike(f"%{search}%"))
         )
     
-    # Исправленный ORDER BY - убираем ссылку на users без JOIN
+    # Исправленный ORDER BY - простая сортировка без nullslast
     inventory_items = query.order_by(
-        Inventory.owner.nullslast(),
+        Inventory.owner,
         Inventory.item_name
     ).all()
     

@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from datetime import date
+from datetime import date, datetime
 from app.database import get_db
 from app.models.models import Budget, User, Inventory, VKWhitelist, AccountLinkRequest, BudgetType, InventoryItemType
 from app.auth import get_admin_user, get_password_hash
@@ -561,6 +561,41 @@ async def link_user_accounts(
         db.rollback()  # ДОБАВЛЯЕМ ROLLBACK при ошибке
         return RedirectResponse(
             url=f"/admin/user-accounts?error=link_failed&message={str(e)}", 
+            status_code=302
+        )
+
+# БЫСТРОЕ ИСПРАВЛЕНИЕ: Одобрить все взносы
+@router.post("/admin/approve-all-contributions")
+async def approve_all_contributions(
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """ВРЕМЕННЫЙ роут для быстрого одобрения всех взносов"""
+    try:
+        # Одобряем все неодобренные взносы
+        pending_contributions = db.query(Budget).filter(
+            Budget.type == "Взнос",
+            Budget.is_approved == False
+        ).all()
+        
+        approved_count = 0
+        for contribution in pending_contributions:
+            contribution.is_approved = True
+            contribution.approved_at = datetime.utcnow()
+            contribution.approved_by = admin_user.id
+            approved_count += 1
+        
+        db.commit()
+        
+        return RedirectResponse(
+            url=f"/admin/users?success=approved_all&count={approved_count}", 
+            status_code=302
+        )
+        
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(
+            url=f"/admin/users?error=approve_failed&message={str(e)}", 
             status_code=302
         )
 
