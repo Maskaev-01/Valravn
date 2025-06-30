@@ -105,8 +105,8 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         <option value="all">Все владельцы</option>
                         {% for owner_item in owners_list %}
-                        <option value="{{ owner_item.owner }}" {% if filters.owner == owner_item.owner %}selected{% endif %}>
-                            {{ owner_item.owner }}
+                        <option value="{{ owner_item.owner_name }}" {% if filters.owner == owner_item.owner_name %}selected{% endif %}>
+                            {{ owner_item.owner_name }}
                         </option>
                         {% endfor %}
                     </select>
@@ -122,8 +122,8 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         <option value="all">Все типы</option>
                         {% for type_item in types_list %}
-                        <option value="{{ type_item.item_type }}" {% if filters.item_type == type_item.item_type %}selected{% endif %}>
-                            {{ type_item.item_type }}
+                        <option value="{{ type_item[0] }}" {% if filters.item_type == type_item[0] %}selected{% endif %}>
+                            {{ type_item[0] }}
                         </option>
                         {% endfor %}
                     </select>
@@ -139,8 +139,8 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         <option value="all">Все материалы</option>
                         {% for material_item in materials_list %}
-                        <option value="{{ material_item.material }}" {% if filters.material == material_item.material %}selected{% endif %}>
-                            {{ material_item.material }}
+                        <option value="{{ material_item[0] }}" {% if filters.material == material_item[0] %}selected{% endif %}>
+                            {{ material_item[0] }}
                         </option>
                         {% endfor %}
                     </select>

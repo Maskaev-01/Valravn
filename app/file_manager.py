@@ -18,7 +18,7 @@ class FileManager:
         
         # Разрешенные форматы изображений
         self.allowed_image_types = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
-        self.max_file_size = 10 * 1024 * 1024  # 10MB
+        self.max_file_size = 20 * 1024 * 1024  # 20MB
         
     async def save_screenshot(self, file: UploadFile) -> str:
         """Сохраняет скриншот перевода"""

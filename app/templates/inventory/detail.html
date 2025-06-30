@@ -174,6 +174,24 @@
 
         <!-- Sidebar -->
         <div class="space-y-6">
+            <!-- Item Image -->
+            {% if item.image_path %}
+            <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-image mr-2 text-green-600"></i>
+                        Фотография предмета
+                    </h3>
+                    <div class="text-center">
+                        <img src="{{ item.image_path }}" 
+                             alt="{{ item.item_name }}" 
+                             class="w-full h-auto rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                             onclick="openImageModal('{{ item.image_path }}', '{{ item.item_name }}')">
+                        <p class="text-xs text-gray-500 mt-2">Нажмите для увеличения</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             <!-- Similar Items -->
             {% if similar_items %}
             <div class="bg-white shadow-lg rounded-lg border border-gray-200">
@@ -298,11 +316,51 @@
 <form id="delete-form" method="post" action="/inventory/delete/{{ item.id }}" style="display: none;">
 </form>
 
+<!-- Image Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+    <div class="relative max-w-4xl max-h-full">
+        <button onclick="closeImageModal()" 
+                class="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl z-10">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="modalImage" src="" alt="" class="max-w-full max-h-full rounded-lg">
+        <div class="absolute bottom-4 left-4 right-4 text-white text-center">
+            <p id="modalImageTitle" class="text-lg font-semibold"></p>
+        </div>
+    </div>
+</div>
+
 <script>
 function confirmDelete() {
     if (confirm('Вы уверены, что хотите удалить предмет "{{ item.item_name }}"? Это действие нельзя отменить.')) {
         document.getElementById('delete-form').submit();
     }
 }
+
+function openImageModal(imagePath, title) {
+    document.getElementById('modalImage').src = imagePath;
+    document.getElementById('modalImageTitle').textContent = title;
+    document.getElementById('imageModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Закрытие модального окна по клику вне изображения
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+// Закрытие модального окна по ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
 </script>
 {% endblock %} 

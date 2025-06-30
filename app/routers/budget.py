@@ -121,9 +121,9 @@ async def add_contribution(
         # Обрабатываем скриншот если есть
         screenshot_path = None
         if screenshot and screenshot.filename:
-            # Проверяем размер файла (максимум 10MB)
-            if hasattr(screenshot, 'size') and screenshot.size > 10 * 1024 * 1024:
-                raise HTTPException(status_code=400, detail="Размер файла не должен превышать 10MB")
+            # Проверяем размер файла (максимум 20MB)
+            if hasattr(screenshot, 'size') and screenshot.size > 20 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="Размер файла не должен превышать 20MB")
             
             # Проверяем тип файла
             allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
