@@ -765,4 +765,163 @@ select {
 .dark .dark\:text-red-300,
 .dark .dark\:text-red-400 {
   color: var(--raven-white) !important;
+}
+
+/* ===== ФИНАЛЬНЫЕ КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ ===== */
+/* Максимальная специфичность для всех красных элементов */
+
+/* 1. УНИВЕРСАЛЬНОЕ ПЕРЕОПРЕДЕЛЕНИЕ ВСЕХ КРАСНЫХ ФОНОВ */
+html.dark [class*="bg-red"],
+html.dark [class*="bg-valravn"],
+body.dark [class*="bg-red"],
+body.dark [class*="bg-valravn"] {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* 2. ВСЕ ДОЧЕРНИЕ ЭЛЕМЕНТЫ В КРАСНЫХ КОНТЕЙНЕРАХ */
+html.dark [class*="bg-red"] *,
+html.dark [class*="bg-valravn"] *,
+body.dark [class*="bg-red"] *,
+body.dark [class*="bg-valravn"] * {
+  color: var(--raven-white) !important;
+}
+
+/* 3. КОНКРЕТНЫЕ ПРОБЛЕМНЫЕ КЛАССЫ С МАКСИМАЛЬНОЙ СПЕЦИФИЧНОСТЬЮ */
+html.dark .bg-red-50,
+html.dark .bg-red-100,
+html.dark .bg-red-200,
+html.dark .bg-red-300,
+html.dark .bg-red-400,
+html.dark .bg-red-500,
+html.dark .bg-red-600,
+html.dark .bg-red-700,
+html.dark .bg-red-800,
+html.dark .bg-red-900,
+body.dark .bg-red-50,
+body.dark .bg-red-100,
+body.dark .bg-red-200,
+body.dark .bg-red-300,
+body.dark .bg-red-400,
+body.dark .bg-red-500,
+body.dark .bg-red-600,
+body.dark .bg-red-700,
+body.dark .bg-red-800,
+body.dark .bg-red-900 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+  border-color: var(--raven-bright-red) !important;
+}
+
+/* 4. ВСЕ ИКОНКИ И ТЕКСТ В КРАСНЫХ ЭЛЕМЕНТАХ */
+html.dark .bg-red-50 i,
+html.dark .bg-red-50 .fas,
+html.dark .bg-red-50 div,
+html.dark .bg-red-50 span,
+html.dark .bg-red-50 p,
+html.dark .bg-red-50 a,
+html.dark .bg-red-100 i,
+html.dark .bg-red-100 .fas,
+html.dark .bg-red-100 div,
+html.dark .bg-red-100 span,
+html.dark .bg-red-100 p,
+html.dark .bg-red-100 a,
+body.dark .bg-red-50 i,
+body.dark .bg-red-50 .fas,
+body.dark .bg-red-50 div,
+body.dark .bg-red-50 span,
+body.dark .bg-red-50 p,
+body.dark .bg-red-50 a,
+body.dark .bg-red-100 i,
+body.dark .bg-red-100 .fas,
+body.dark .bg-red-100 div,
+body.dark .bg-red-100 span,
+body.dark .bg-red-100 p,
+body.dark .bg-red-100 a {
+  color: var(--raven-white) !important;
+}
+
+/* 5. HOVER СОСТОЯНИЯ */
+html.dark .bg-red-50:hover,
+html.dark .bg-red-100:hover,
+html.dark .hover\:bg-red-100:hover,
+html.dark .hover\:bg-red-50:hover,
+body.dark .bg-red-50:hover,
+body.dark .bg-red-100:hover,
+body.dark .hover\:bg-red-100:hover,
+body.dark .hover\:bg-red-50:hover {
+  background-color: var(--raven-bright-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* 6. DARK: ПРЕФИКСЫ TAILWIND */
+html.dark .dark\:bg-red-900,
+html.dark .dark\:bg-red-800,
+html.dark .dark\:bg-red-700,
+body.dark .dark\:bg-red-900,
+body.dark .dark\:bg-red-800,
+body.dark .dark\:bg-red-700 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* 7. ВСЕ КРАСНЫЕ ТЕКСТЫ СТАНОВЯТСЯ БЕЛЫМИ */
+html.dark .text-red-300,
+html.dark .text-red-400,
+html.dark .text-red-500,
+html.dark .text-red-600,
+html.dark .text-red-700,
+html.dark .text-red-800,
+html.dark .text-red-900,
+html.dark .dark\:text-red-200,
+html.dark .dark\:text-red-300,
+html.dark .dark\:text-red-400,
+body.dark .text-red-300,
+body.dark .text-red-400,
+body.dark .text-red-500,
+body.dark .text-red-600,
+body.dark .text-red-700,
+body.dark .text-red-800,
+body.dark .text-red-900,
+body.dark .dark\:text-red-200,
+body.dark .dark\:text-red-300,
+body.dark .dark\:text-red-400 {
+  color: var(--raven-white) !important;
+}
+
+/* 8. ВАЛРАВН ЦВЕТА */
+html.dark .bg-valravn-50,
+html.dark .bg-valravn-100,
+html.dark .bg-valravn-200,
+html.dark .bg-valravn-300,
+html.dark .bg-valravn-400,
+html.dark .bg-valravn-500,
+html.dark .bg-valravn-600,
+html.dark .bg-valravn-700,
+html.dark .bg-valravn-800,
+html.dark .bg-valravn-900,
+body.dark .bg-valravn-50,
+body.dark .bg-valravn-100,
+body.dark .bg-valravn-200,
+body.dark .bg-valravn-300,
+body.dark .bg-valravn-400,
+body.dark .bg-valravn-500,
+body.dark .bg-valravn-600,
+body.dark .bg-valravn-700,
+body.dark .bg-valravn-800,
+body.dark .bg-valravn-900 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* 9. ФИНАЛЬНОЕ ПЕРЕОПРЕДЕЛЕНИЕ ДЛЯ ВСЕХ ВОЗМОЖНЫХ СЛУЧАЕВ */
+[class*="dark"] [class*="bg-red"],
+[class*="dark"] [class*="bg-valravn"] {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+[class*="dark"] [class*="bg-red"] *,
+[class*="dark"] [class*="bg-valravn"] * {
+  color: var(--raven-white) !important;
 } 
