@@ -23,6 +23,10 @@ class User(Base):
     is_whitelisted = Column(Boolean, default=False)  # Разрешен ли доступ через VK
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    budget_entries = relationship("Budget", back_populates="created_by_user")
+    owned_inventory = relationship("Inventory", foreign_keys="Inventory.owner_user_id", back_populates="owner_user")
 
 class Budget(Base):
     __tablename__ = "budget"
@@ -114,6 +118,9 @@ class InventoryItemType(Base):
     sort_order = Column(Integer, default=0)             # Порядок сортировки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    inventory_items = relationship("Inventory", back_populates="item_type_ref")
 
 class InventoryMaterialType(Base):
     """Справочник материалов для инвентаря"""
@@ -127,6 +134,9 @@ class InventoryMaterialType(Base):
     sort_order = Column(Integer, default=0)             # Порядок сортировки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    inventory_items = relationship("Inventory", back_populates="material_type_ref")
 
 class AccountLinkRequest(Base):
     """Запросы на связывание аккаунтов"""
