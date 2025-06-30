@@ -123,7 +123,7 @@
                         <option value="all">Все типы</option>
                         {% for type_item in types_list %}
                         <option value="{{ type_item[0] }}" {% if filters.item_type == type_item[0] %}selected{% endif %}>
-                            {{ type_item[0] }}
+                            {{ type_item[1] }}
                         </option>
                         {% endfor %}
                     </select>

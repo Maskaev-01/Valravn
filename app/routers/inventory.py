@@ -69,7 +69,13 @@ async def inventory_list(
             (func.concat(User.first_name, ' ', User.last_name) == owner)  # По полному имени VK
         )
     if item_type and item_type != "all":
-        query = query.filter(Inventory.item_type == item_type)
+        # Фильтрация по новому полю item_type_id
+        try:
+            item_type_id = int(item_type)
+            query = query.filter(Inventory.item_type_id == item_type_id)
+        except ValueError:
+            # Если передан не ID, а текст - используем старое поле для обратной совместимости
+            query = query.filter(Inventory.item_type == item_type)
     if material and material != "all":
         query = query.filter(Inventory.material == material)
     
@@ -133,14 +139,18 @@ async def inventory_list(
     ''')
     owners_list = db.execute(owners_query).fetchall()
     
-    # Получаем типы предметов из справочника
-    item_types_list = db.query(InventoryItemType).filter(InventoryItemType.is_active == True).order_by(InventoryItemType.sort_order, InventoryItemType.name).all()
+    # ИСПРАВЛЕНИЕ: используем справочник типов, но только те, которые есть в инвентаре
+    types_list_query = text('''
+        SELECT DISTINCT iit.id, iit.name, iit.sort_order
+        FROM inventory_item_types iit
+        INNER JOIN inventory i ON i.item_type_id = iit.id
+        WHERE iit.is_active = true
+        ORDER BY iit.sort_order, iit.name
+    ''')
+    types_list_raw = db.execute(types_list_query).fetchall()
     
-    # Если справочник пустой, берем из существующих записей
-    if not item_types_list:
-        types_list = db.query(Inventory.item_type).distinct().filter(Inventory.item_type.isnot(None)).order_by(Inventory.item_type).all()
-    else:
-        types_list = [(item_type.name,) for item_type in item_types_list]
+    # Преобразуем в нужный формат для шаблона: (id, name)
+    types_list = [(str(row[0]), row[1]) for row in types_list_raw]
     
     materials_list = db.query(Inventory.material).distinct().filter(Inventory.material.isnot(None)).order_by(Inventory.material).all()
     

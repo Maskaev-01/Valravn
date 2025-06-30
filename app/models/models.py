@@ -48,7 +48,8 @@ class Inventory(Base):
     owner = Column(Text)  # Строковое поле для обратной совместимости
     owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Владелец (ссылка на пользователя)
     item_name = Column(Text, nullable=False)
-    item_type = Column(Text)
+    item_type = Column(Text)  # Старое поле - оставляем для обратной совместимости
+    item_type_id = Column(Integer, ForeignKey("inventory_item_types.id", ondelete="SET NULL"), nullable=True)  # Новое поле
     subtype = Column(Text)
     material = Column(Text)
     color = Column(Text)
@@ -69,6 +70,7 @@ class Inventory(Base):
     # Отношения
     owner_user = relationship("User", foreign_keys=[owner_user_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
+    item_type_ref = relationship("InventoryItemType", foreign_keys=[item_type_id])
 
 # Новая таблица для VK whitelist (админы)
 class VKWhitelist(Base):
