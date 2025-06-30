@@ -239,9 +239,15 @@ async def reports(
     report_type: str = None,
     contributor: str = None
 ):
-    # Базовые условия для фильтрации (только утвержденные)
-    where_conditions = ["is_approved = :is_approved"]
-    params = {"is_approved": True}
+    # Базовые условия для фильтрации
+    # Если выбран конкретный участник, показываем все его записи (включая неодобренные)
+    # Иначе показываем только одобренные записи
+    if contributor and contributor != "all":
+        where_conditions = ["1 = 1"]  # Показываем все записи выбранного участника
+        params = {}
+    else:
+        where_conditions = ["is_approved = :is_approved"]  # Показываем только одобренные
+        params = {"is_approved": True}
     
     # Добавляем фильтры с параметрами (ИСПРАВЛЕНИЕ SQL ИНЪЕКЦИИ)
     if start_date:
@@ -342,8 +348,13 @@ async def reports(
         "type": "Взнос"
     }).fetchall()
     
-    types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL AND is_approved = :is_approved ORDER BY type")
-    types_list = db.execute(types_list_query, {"is_approved": True}).fetchall()
+    # Для списка типов тоже применяем ту же логику
+    if contributor and contributor != "all":
+        types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL ORDER BY type")
+        types_list = db.execute(types_list_query).fetchall()
+    else:
+        types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL AND is_approved = :is_approved ORDER BY type")
+        types_list = db.execute(types_list_query, {"is_approved": True}).fetchall()
     
     # Получаем историю операций с фильтрацией и пагинацией
     operations_query = text(f'''
