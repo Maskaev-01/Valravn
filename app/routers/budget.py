@@ -335,14 +335,14 @@ async def reports(
     types_results = db.execute(types_query, params).fetchall()
     
     # Получаем список уникальных участников и типов для фильтров (БЕЗОПАСНЫЕ ЗАПРОСЫ)
-    # ВРЕМЕННО: показываем всех участников, включая неодобренных, чтобы фильтр работал
+    # ИСПРАВЛЕНИЕ: возвращаем поле 'description' для совместимости с шаблоном
     contributors_list_query = text("""
-        SELECT DISTINCT COALESCE(contributor_name, description) as contributor 
+        SELECT DISTINCT COALESCE(contributor_name, description) as description 
         FROM budget 
         WHERE type = :type 
         AND COALESCE(contributor_name, description) IS NOT NULL
         AND TRIM(COALESCE(contributor_name, description)) != ''
-        ORDER BY contributor
+        ORDER BY description
     """)
     contributors_list = db.execute(contributors_list_query, {
         "type": "Взнос"
