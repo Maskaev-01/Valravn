@@ -80,6 +80,29 @@ async def add_contribution(
     db: Session = Depends(get_db)
 ):
     try:
+        # ДОБАВЛЯЕМ ВАЛИДАЦИЮ ДАННЫХ
+        # Проверяем сумму
+        if price <= 0:
+            raise HTTPException(status_code=400, detail="Сумма взноса должна быть положительной")
+        
+        if price > 1000000:  # Максимум 1 миллион
+            raise HTTPException(status_code=400, detail="Сумма взноса слишком большая (максимум 1,000,000 ₽)")
+        
+        # Проверяем описание
+        if not description or len(description.strip()) < 3:
+            raise HTTPException(status_code=400, detail="Описание должно содержать минимум 3 символа")
+        
+        if len(description) > 500:
+            raise HTTPException(status_code=400, detail="Описание слишком длинное (максимум 500 символов)")
+        
+        # Проверяем дату
+        if contribution_date > date.today():
+            raise HTTPException(status_code=400, detail="Дата взноса не может быть в будущем")
+        
+        from datetime import timedelta
+        if contribution_date < date.today() - timedelta(days=365):
+            raise HTTPException(status_code=400, detail="Дата взноса не может быть старше года")
+        
         # Определяем имя участника
         if current_user.vk_id and not contributor_name:
             # Для VK пользователей используем их имя
@@ -88,18 +111,34 @@ async def add_contribution(
             # Для обычных пользователей используем username
             contributor_name = current_user.username
         
+        # Проверяем имя участника
+        if not contributor_name or len(contributor_name.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Имя участника должно содержать минимум 2 символа")
+        
+        if len(contributor_name) > 100:
+            raise HTTPException(status_code=400, detail="Имя участника слишком длинное (максимум 100 символов)")
+        
         # Обрабатываем скриншот если есть
         screenshot_path = None
         if screenshot and screenshot.filename:
+            # Проверяем размер файла (максимум 10MB)
+            if hasattr(screenshot, 'size') and screenshot.size > 10 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="Размер файла не должен превышать 10MB")
+            
+            # Проверяем тип файла
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+            if screenshot.content_type not in allowed_types:
+                raise HTTPException(status_code=400, detail="Поддерживаются только изображения (JPEG, PNG, GIF, WebP)")
+            
             screenshot_path = await file_manager.save_screenshot(screenshot)
         
         # Создаем новый взнос
         budget_entry = Budget(
-            description=description,
+            description=description.strip(),
             price=price,
             data=contribution_date,
             type="Взнос",
-            contributor_name=contributor_name,
+            contributor_name=contributor_name.strip(),
             user_id=current_user.id,
             screenshot_path=screenshot_path,
             is_approved=False,  # Требует модерации
@@ -108,6 +147,7 @@ async def add_contribution(
         
         db.add(budget_entry)
         db.commit()
+        db.refresh(budget_entry)
         
         return templates.TemplateResponse("add_contribution.html", {
             "request": request,
@@ -126,6 +166,7 @@ async def add_contribution(
             "error": e.detail
         })
     except Exception as e:
+        db.rollback()  # ДОБАВЛЯЕМ ROLLBACK при ошибке
         return templates.TemplateResponse("add_contribution.html", {
             "request": request,
             "user": current_user,
@@ -199,21 +240,26 @@ async def reports(
     contributor: str = None
 ):
     # Базовые условия для фильтрации (только утвержденные)
-    where_conditions = ["is_approved = true"]
+    where_conditions = ["is_approved = :is_approved"]
+    params = {"is_approved": True}
     
-    # Добавляем фильтры
+    # Добавляем фильтры с параметрами (ИСПРАВЛЕНИЕ SQL ИНЪЕКЦИИ)
     if start_date:
-        where_conditions.append(f"data >= '{start_date}'")
+        where_conditions.append("data >= :start_date")
+        params["start_date"] = start_date
     if end_date:
-        where_conditions.append(f"data <= '{end_date}'")
+        where_conditions.append("data <= :end_date")
+        params["end_date"] = end_date
     if report_type and report_type != "all":
-        where_conditions.append(f"type = '{report_type}'")
+        where_conditions.append("type = :report_type")
+        params["report_type"] = report_type
     if contributor and contributor != "all":
-        where_conditions.append(f"contributor_name = '{contributor}'")
+        where_conditions.append("contributor_name = :contributor")
+        params["contributor"] = contributor
     
     where_clause = " AND ".join(where_conditions)
     
-    # Получаем данные из БД с фильтрацией
+    # Получаем данные из БД с фильтрацией (БЕЗОПАСНЫЕ ЗАПРОСЫ)
     summary_query = text(f'''
         SELECT 'Общий расход' as result_type, sum(price) as sum_value
         FROM budget 
@@ -232,7 +278,7 @@ async def reports(
         WHERE {where_clause}
     ''')
     
-    summary_results = db.execute(summary_query).fetchall()
+    summary_results = db.execute(summary_query, params).fetchall()
     
     # Получаем данные помесячно с фильтрацией
     monthly_query = text(f'''
@@ -249,7 +295,7 @@ async def reports(
         LIMIT 24
     ''')
     
-    monthly_results = db.execute(monthly_query).fetchall()
+    monthly_results = db.execute(monthly_query, params).fetchall()
     
     # Получаем данные по участникам (используем contributor_name)
     contributors_query = text(f'''
@@ -266,7 +312,7 @@ async def reports(
         ORDER BY total_amount DESC
     ''')
     
-    contributors_results = db.execute(contributors_query).fetchall()
+    contributors_results = db.execute(contributors_query, params).fetchall()
     
     # Получаем данные по типам операций
     types_query = text(f'''
@@ -280,14 +326,14 @@ async def reports(
         ORDER BY total_amount DESC
     ''')
     
-    types_results = db.execute(types_query).fetchall()
+    types_results = db.execute(types_query, params).fetchall()
     
-    # Получаем список уникальных участников и типов для фильтров
-    contributors_list_query = text("SELECT DISTINCT COALESCE(contributor_name, description) as contributor FROM budget WHERE type = 'Взнос' AND is_approved = true ORDER BY contributor")
-    contributors_list = db.execute(contributors_list_query).fetchall()
+    # Получаем список уникальных участников и типов для фильтров (БЕЗОПАСНЫЕ ЗАПРОСЫ)
+    contributors_list_query = text("SELECT DISTINCT COALESCE(contributor_name, description) as contributor FROM budget WHERE type = 'Взнос' AND is_approved = :is_approved ORDER BY contributor")
+    contributors_list = db.execute(contributors_list_query, {"is_approved": True}).fetchall()
     
-    types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL AND is_approved = true ORDER BY type")
-    types_list = db.execute(types_list_query).fetchall()
+    types_list_query = text("SELECT DISTINCT type FROM budget WHERE type IS NOT NULL AND is_approved = :is_approved ORDER BY type")
+    types_list = db.execute(types_list_query, {"is_approved": True}).fetchall()
     
     # Получаем историю операций с фильтрацией и пагинацией
     operations_query = text(f'''
@@ -298,7 +344,7 @@ async def reports(
         LIMIT 100
     ''')
     
-    operations_history = db.execute(operations_query).fetchall()
+    operations_history = db.execute(operations_query, params).fetchall()
     
     return templates.TemplateResponse("reports.html", {
         "request": request,
@@ -328,12 +374,15 @@ async def contributors(request: Request, current_user: User = Depends(get_curren
             SUM(price) as total_amount,
             MAX(data) as last_contribution
         FROM budget 
-        WHERE type = 'Взнос' AND is_approved = true
+        WHERE type = :type AND is_approved = :is_approved
         GROUP BY COALESCE(contributor_name, description)
         ORDER BY total_amount DESC
     ''')
     
-    contributors_results = db.execute(contributors_query).fetchall()
+    contributors_results = db.execute(contributors_query, {
+        "type": "Взнос",
+        "is_approved": True
+    }).fetchall()
     
     return templates.TemplateResponse("contributors.html", {
         "request": request,

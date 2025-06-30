@@ -443,6 +443,28 @@ async def link_user_accounts(
                 status_code=302
             )
         
+        # ИСПРАВЛЕНИЕ: Сначала обновляем все связанные записи ПЕРЕД удалением пользователя
+        # Обновляем записи бюджета
+        budget_update_count = db.query(Budget).filter(Budget.user_id == secondary_user.id).update({"user_id": primary_user.id})
+        
+        # Обновляем записи инвентаря
+        inventory_update_count = db.query(Inventory).filter(Inventory.created_by_user_id == secondary_user.id).update({"created_by_user_id": primary_user.id})
+        
+        # Обновляем записи account_link_requests если есть
+        try:
+            db.execute(text("UPDATE account_link_requests SET user_id = :primary_id WHERE user_id = :secondary_id"), 
+                      {"primary_id": primary_user.id, "secondary_id": secondary_user.id})
+            db.execute(text("UPDATE account_link_requests SET target_user_id = :primary_id WHERE target_user_id = :secondary_id"), 
+                      {"primary_id": primary_user.id, "secondary_id": secondary_user.id})
+            db.execute(text("UPDATE account_link_requests SET processed_by = :primary_id WHERE processed_by = :secondary_id"), 
+                      {"primary_id": primary_user.id, "secondary_id": secondary_user.id})
+        except Exception as e:
+            # Таблица может не существовать, игнорируем
+            pass
+        
+        # Коммитим обновления связанных записей
+        db.commit()
+        
         # Сохраняем данные вторичного аккаунта в переменные
         secondary_vk_id = secondary_user.vk_id
         secondary_avatar_url = secondary_user.avatar_url
@@ -452,7 +474,7 @@ async def link_user_accounts(
         secondary_last_name = secondary_user.last_name
         secondary_is_admin = secondary_user.is_admin
         
-        # Удаляем вторичный аккаунт
+        # Теперь БЕЗОПАСНО удаляем вторичный аккаунт
         db.delete(secondary_user)
         db.commit()
         
@@ -474,18 +496,15 @@ async def link_user_accounts(
         # Переносим права админа (берем максимальный уровень)
         primary_user.is_admin = max(primary_user.is_admin, secondary_is_admin)
         
-        # Обновляем записи бюджета и инвентаря
-        db.query(Budget).filter(Budget.user_id == secondary_user.id).update({"user_id": primary_user.id})
-        db.query(Inventory).filter(Inventory.created_by_user_id == secondary_user.id).update({"created_by_user_id": primary_user.id})
-        
         db.commit()
         
         return RedirectResponse(
-            url="/admin/user-accounts?success=accounts_linked", 
+            url=f"/admin/user-accounts?success=accounts_linked&budget_updated={budget_update_count}&inventory_updated={inventory_update_count}", 
             status_code=302
         )
         
     except Exception as e:
+        db.rollback()  # ДОБАВЛЯЕМ ROLLBACK при ошибке
         return RedirectResponse(
             url=f"/admin/user-accounts?error=link_failed&message={str(e)}", 
             status_code=302

@@ -35,11 +35,11 @@ class Budget(Base):
     # Новые поля для модерации
     screenshot_path = Column(String, nullable=True)  # Путь к скриншоту перевода
     is_approved = Column(Boolean, default=False)     # Одобрен ли взнос
-    user_id = Column(Integer, nullable=True)          # ID пользователя (связь с VK)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: добавляем SET NULL
     contributor_name = Column(String, nullable=True)  # Имя из VK или введенное вручную
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     approved_at = Column(DateTime(timezone=True), nullable=True)
-    approved_by = Column(Integer, nullable=True)      # ID админа который одобрил
+    approved_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: добавляем SET NULL
 
 class Inventory(Base):
     __tablename__ = "inventory"
@@ -60,7 +60,7 @@ class Inventory(Base):
     
     # Новые поля
     image_path = Column(String, nullable=True)        # Путь к фотографии предмета
-    created_by_user_id = Column(Integer, nullable=True)  # Кто создал запись
+    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: добавляем SET NULL
     is_club_item = Column(Boolean, default=False)    # Клубный ли предмет
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -73,21 +73,21 @@ class VKWhitelist(Base):
     vk_id = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, nullable=False)  # Имя пользователя из VK
     is_admin = Column(Boolean, default=False)   # Админские права
-    added_by = Column(Integer, nullable=True)   # Кто добавил в whitelist
-    created_at = Column(DateTime(timezone=True), server_default=func.now()) 
+    added_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)   # ИСПРАВЛЕНИЕ: добавляем SET NULL
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class AccountLinkRequest(Base):
     """Запросы на связывание аккаунтов"""
     __tablename__ = "account_link_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    target_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # ИСПРАВЛЕНИЕ: CASCADE для обязательных связей
+    target_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # ИСПРАВЛЕНИЕ: CASCADE для обязательных связей
     status = Column(String, default="pending")  # pending, approved, rejected
     message = Column(Text, nullable=True)  # Опциональное сообщение от пользователя
     created_at = Column(DateTime, server_default=func.now())
     processed_at = Column(DateTime, nullable=True)
-    processed_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # Кто обработал (админ или целевой пользователь)
+    processed_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # ИСПРАВЛЕНИЕ: SET NULL для опциональных
 
     # Отношения
     requester = relationship("User", foreign_keys=[user_id])
