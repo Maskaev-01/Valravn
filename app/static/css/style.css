@@ -284,11 +284,11 @@ select {
 }
 
 .dark .text-gray-400 {
-  color: var(--raven-light-gray) !important;
+  color: var(--raven-lighter-gray) !important; /* Сделали светлее */
 }
 
 .dark .text-gray-500 {
-  color: var(--raven-lighter-gray) !important;
+  color: var(--raven-very-light) !important; /* Сделали еще светлее для лучшей читаемости */
 }
 
 .dark .text-gray-600,

@@ -105,37 +105,16 @@ async def inventory_list(
     # Обрабатываем результаты для правильного отображения владельца
     inventory_items = []
     for item in inventory_items_raw:
-        # Создаем копию объекта с правильным отображением владельца
-        if hasattr(item, 'owner_user') and item.owner_user:
-            # Есть связанный пользователь
-            if item.owner_user.vk_id:
-                # VK пользователь - показываем полное имя
-                display_owner = f"{item.owner_user.first_name} {item.owner_user.last_name}".strip()
-                if not display_owner:
-                    display_owner = item.owner_user.username
-            else:
-                # Обычный пользователь - показываем username
-                display_owner = item.owner_user.username
-            # Временно заменяем owner для отображения
-            item.owner = display_owner
-        # Если нет связанного пользователя, используем существующий owner
+        # ИСПРАВЛЕНИЕ: всегда используем строковое поле owner для отображения
+        # Это поле уже содержит правильное имя владельца
         inventory_items.append(item)
     
-    # Получаем списки для фильтров (включая как старые, так и новые записи)
+    # ИСПРАВЛЕНИЕ: используем только поле owner из таблицы inventory для единообразия
     owners_query = text('''
-        SELECT DISTINCT owner_name 
-        FROM (
-            SELECT COALESCE(u.username, i.owner) as owner_name
-            FROM inventory i
-            LEFT JOIN users u ON i.owner_user_id = u.id
-            WHERE COALESCE(u.username, i.owner) IS NOT NULL
-            UNION
-            SELECT CONCAT(u.first_name, ' ', u.last_name) as owner_name
-            FROM inventory i
-            JOIN users u ON i.owner_user_id = u.id
-            WHERE u.vk_id IS NOT NULL AND u.first_name IS NOT NULL
-        ) owners
-        ORDER BY owner_name
+        SELECT DISTINCT owner as owner_name 
+        FROM inventory
+        WHERE owner IS NOT NULL AND owner != ''
+        ORDER BY owner
     ''')
     owners_list = db.execute(owners_query).fetchall()
     
@@ -210,6 +189,10 @@ async def add_inventory_page(
     # Получаем типы предметов из справочника
     item_types = db.query(InventoryItemType).filter(InventoryItemType.is_active == True).order_by(InventoryItemType.sort_order, InventoryItemType.name).all()
     
+    # Получаем материалы из справочника
+    from app.models.models import InventoryMaterialType
+    material_types = db.query(InventoryMaterialType).filter(InventoryMaterialType.is_active == True).order_by(InventoryMaterialType.sort_order, InventoryMaterialType.name).all()
+    
     return templates.TemplateResponse("inventory/add.html", {
         "request": request,
         "user": current_user,
@@ -217,7 +200,8 @@ async def add_inventory_page(
         "is_vk_user": is_vk_user,
         "is_admin": is_admin,
         "owner_preset": owner_preset,
-        "item_types": item_types
+        "item_types": item_types,
+        "material_types": material_types
     })
 
 @router.post("/inventory/add")
@@ -228,6 +212,7 @@ async def add_inventory(
     item_type: Optional[str] = Form(None),
     subtype: Optional[str] = Form(None),
     material: Optional[str] = Form(None),
+    material_type: Optional[str] = Form(None),  # Новое поле для ID материала
     color: Optional[str] = Form(None),
     size: Optional[str] = Form(None),
     find_type: Optional[str] = Form(None),
@@ -264,13 +249,29 @@ async def add_inventory(
                 else:
                     final_owner = current_user.username
         
+        # Обрабатываем материал
+        material_type_id = None
+        material_name = None
+        
+        if material_type:
+            try:
+                material_type_id = int(material_type)
+                # Получаем название материала из справочника
+                from app.models.models import InventoryMaterialType
+                material_obj = db.query(InventoryMaterialType).filter(InventoryMaterialType.id == material_type_id).first()
+                if material_obj:
+                    material_name = material_obj.name
+            except ValueError:
+                pass
+        
         inventory_item = Inventory(
             owner=final_owner,
             owner_user_id=owner_user_id,
             item_name=item_name,
             item_type=item_type if item_type else None,
             subtype=subtype if subtype else None,
-            material=material if material else None,
+            material=material_name if material_name else material,  # Используем название из справочника или введенное вручную
+            material_type_id=material_type_id,  # Новое поле
             color=color if color else None,
             size=size if size else None,
             find_type=find_type if find_type else None,

@@ -306,15 +306,15 @@ async def reports(
     # Получаем данные по участникам (используем contributor_name)
     contributors_query = text(f'''
         SELECT 
-            COALESCE(contributor_name, description) as description,
+            contributor_name as description,
             COUNT(*) as contribution_count,
             SUM(price) as total_amount,
             AVG(price) as avg_amount,
             MIN(data) as first_contribution,
             MAX(data) as last_contribution
         FROM budget 
-        WHERE type = 'Взнос' AND {where_clause}
-        GROUP BY COALESCE(contributor_name, description)
+        WHERE type = 'Взнос' AND contributor_name IS NOT NULL AND {where_clause}
+        GROUP BY contributor_name
         ORDER BY total_amount DESC
     ''')
     
@@ -335,14 +335,14 @@ async def reports(
     types_results = db.execute(types_query, params).fetchall()
     
     # Получаем список уникальных участников и типов для фильтров (БЕЗОПАСНЫЕ ЗАПРОСЫ)
-    # ИСПРАВЛЕНИЕ: возвращаем поле 'description' для совместимости с шаблоном
+    # ИСПРАВЛЕНИЕ: используем только contributor_name для единообразия
     contributors_list_query = text("""
-        SELECT DISTINCT COALESCE(contributor_name, description) as description 
+        SELECT DISTINCT contributor_name as description 
         FROM budget 
         WHERE type = :type 
-        AND COALESCE(contributor_name, description) IS NOT NULL
-        AND TRIM(COALESCE(contributor_name, description)) != ''
-        ORDER BY description
+        AND contributor_name IS NOT NULL
+        AND TRIM(contributor_name) != ''
+        ORDER BY contributor_name
     """)
     contributors_list = db.execute(contributors_list_query, {
         "type": "Взнос"
@@ -390,13 +390,13 @@ async def contributors(request: Request, current_user: User = Depends(get_curren
     # Получаем сводную информацию по участникам (только утвержденные взносы)
     contributors_query = text('''
         SELECT 
-            COALESCE(contributor_name, description) as description,
+            contributor_name as description,
             COUNT(*) as contribution_count,
             SUM(price) as total_amount,
             MAX(data) as last_contribution
         FROM budget 
-        WHERE type = :type AND is_approved = :is_approved
-        GROUP BY COALESCE(contributor_name, description)
+        WHERE type = :type AND is_approved = :is_approved AND contributor_name IS NOT NULL
+        GROUP BY contributor_name
         ORDER BY total_amount DESC
     ''')
     

@@ -51,7 +51,8 @@ class Inventory(Base):
     item_type = Column(Text)  # Старое поле - оставляем для обратной совместимости
     item_type_id = Column(Integer, ForeignKey("inventory_item_types.id", ondelete="SET NULL"), nullable=True)  # Новое поле
     subtype = Column(Text)
-    material = Column(Text)
+    material = Column(Text)  # Старое поле - оставляем для обратной совместимости
+    material_type_id = Column(Integer, ForeignKey("inventory_material_types.id", ondelete="SET NULL"), nullable=True)  # Новое поле
     color = Column(Text)
     size = Column(Text)
     find_type = Column(Text)
@@ -71,6 +72,7 @@ class Inventory(Base):
     owner_user = relationship("User", foreign_keys=[owner_user_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
     item_type_ref = relationship("InventoryItemType", foreign_keys=[item_type_id])
+    material_type_ref = relationship("InventoryMaterialType", foreign_keys=[material_type_id])
 
 # Новая таблица для VK whitelist (админы)
 class VKWhitelist(Base):
@@ -104,6 +106,19 @@ class InventoryItemType(Base):
     name = Column(String, unique=True, nullable=False)  # Название типа
     description = Column(String, nullable=True)         # Описание
     is_active = Column(Boolean, default=True)           # Активен ли тип
+    sort_order = Column(Integer, default=0)             # Порядок сортировки
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class InventoryMaterialType(Base):
+    """Справочник материалов для инвентаря"""
+    __tablename__ = "inventory_material_types"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)  # Название материала
+    category = Column(String, nullable=True)            # Категория (Металл, Дерево, Ткань и т.д.)
+    description = Column(String, nullable=True)         # Описание
+    is_active = Column(Boolean, default=True)           # Активен ли материал
     sort_order = Column(Integer, default=0)             # Порядок сортировки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
