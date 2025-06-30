@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, DateTime, Date, Float, Text, Boo
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
-from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -43,8 +42,8 @@ class Budget(Base):
     screenshot_filename = Column(String(255), nullable=True)  # Оригинальное имя файла
     screenshot_size = Column(Integer, nullable=True)  # Размер скриншота в байтах
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
     created_by_user = relationship("User", back_populates="budget_entries")
@@ -74,8 +73,8 @@ class Inventory(Base):
     image_filename = Column(String(255), nullable=True)  # Оригинальное имя файла
     image_size = Column(Integer, nullable=True)  # Размер изображения в байтах
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
     owner_user = relationship("User", foreign_keys=[owner_user_id], back_populates="owned_inventory")

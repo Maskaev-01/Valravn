@@ -138,8 +138,7 @@ async def add_contribution(
             screenshot_data=screenshot_data,
             screenshot_filename=screenshot_filename,
             screenshot_size=screenshot_size,
-            created_by_user_id=current_user.id,
-            created_at=datetime.utcnow()
+            created_by_user_id=current_user.id
         )
         
         db.add(budget_entry)

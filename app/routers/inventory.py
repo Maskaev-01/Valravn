@@ -288,8 +288,7 @@ async def add_inventory(
             image_data=image_data,
             image_filename=image_filename,
             image_size=image_size,
-            created_by_user_id=current_user.id,
-            created_at=datetime.utcnow()
+            created_by_user_id=current_user.id
         )
         
         db.add(inventory_item)
@@ -410,7 +409,7 @@ async def edit_inventory(
         item.burial_number = burial_number if burial_number else None
         item.notes = notes if notes else None
         item.is_club_item = is_club_item
-        item.updated_at = datetime.utcnow()
+        # updated_at будет автоматически установлено базой данных
         
         db.commit()
         
