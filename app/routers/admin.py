@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import date, datetime
 from app.database import get_db
-from app.models.models import Budget, User, Inventory, VKWhitelist, AccountLinkRequest, BudgetType, InventoryItemType
+from app.models.models import Budget, User, Inventory, VKWhitelist, AccountLinkRequest, BudgetType, InventoryItemType, InventoryMaterialType
 from app.auth import get_admin_user, get_password_hash
 from app.vk_oauth import vk_oauth
 
@@ -610,11 +610,15 @@ async def dictionaries_page(
     budget_types = db.query(BudgetType).order_by(BudgetType.sort_order, BudgetType.name).all()
     inventory_types = db.query(InventoryItemType).order_by(InventoryItemType.sort_order, InventoryItemType.name).all()
     
+    # Добавляем материалы инвентаря
+    material_types = db.query(InventoryMaterialType).order_by(InventoryMaterialType.sort_order, InventoryMaterialType.name).all()
+    
     return templates.TemplateResponse("admin/dictionaries.html", {
         "request": request,
         "user": current_user,
         "budget_types": budget_types,
-        "inventory_types": inventory_types
+        "inventory_types": inventory_types,
+        "material_types": material_types
     })
 
 @router.post("/admin/dictionaries/budget-types/add")
@@ -687,5 +691,43 @@ async def toggle_inventory_type(
     inventory_type = db.query(InventoryItemType).filter(InventoryItemType.id == type_id).first()
     if inventory_type:
         inventory_type.is_active = not inventory_type.is_active
+        db.commit()
+    return RedirectResponse(url="/admin/dictionaries", status_code=302)
+
+@router.post("/admin/dictionaries/material-types/add")
+async def add_material_type(
+    request: Request,
+    name: str = Form(...),
+    category: str = Form(None),
+    description: str = Form(None),
+    sort_order: int = Form(0),
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Добавить тип материала"""
+    try:
+        material_type = InventoryMaterialType(
+            name=name.strip(),
+            category=category.strip() if category else None,
+            description=description.strip() if description else None,
+            sort_order=sort_order
+        )
+        db.add(material_type)
+        db.commit()
+        return RedirectResponse(url="/admin/dictionaries", status_code=302)
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(url="/admin/dictionaries?error=duplicate", status_code=302)
+
+@router.post("/admin/dictionaries/material-types/{type_id}/toggle")
+async def toggle_material_type(
+    type_id: int,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Активировать/деактивировать тип материала"""
+    material_type = db.query(InventoryMaterialType).filter(InventoryMaterialType.id == type_id).first()
+    if material_type:
+        material_type.is_active = not material_type.is_active
         db.commit()
     return RedirectResponse(url="/admin/dictionaries", status_code=302) 

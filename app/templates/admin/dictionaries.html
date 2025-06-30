@@ -10,7 +10,7 @@
             Управление справочниками
         </h1>
         <p class="mt-2 text-sm text-gray-600">
-            Настройка типов операций бюджета и типов предметов инвентаря.
+            Настройка типов операций бюджета, типов предметов инвентаря и материалов.
         </p>
     </div>
 
@@ -30,7 +30,7 @@
     </div>
     {% endif %}
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Типы операций бюджета -->
         <div class="bg-white shadow-lg rounded-lg border border-gray-200">
             <div class="p-6">
@@ -162,6 +162,89 @@
                 </div>
             </div>
         </div>
+
+        <!-- Типы материалов -->
+        <div class="bg-white shadow-lg rounded-lg border border-gray-200">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-hammer mr-2 text-orange-600"></i>
+                    Типы материалов
+                </h2>
+                
+                <!-- Форма добавления -->
+                <form method="POST" action="/admin/dictionaries/material-types/add" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="material_name" class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+                            <input type="text" id="material_name" name="name" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-valravn-500">
+                        </div>
+                        <div>
+                            <label for="material_category" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                            <select id="material_category" name="category"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-valravn-500">
+                                <option value="">Выберите категорию</option>
+                                <option value="Металлы">Металлы</option>
+                                <option value="Дерево">Дерево</option>
+                                <option value="Ткани">Ткани</option>
+                                <option value="Кожа и мех">Кожа и мех</option>
+                                <option value="Органические">Органические</option>
+                                <option value="Минералы">Минералы</option>
+                                <option value="Комбинированные">Комбинированные</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="material_description" class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                            <input type="text" id="material_description" name="description"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-valravn-500">
+                        </div>
+                        <div>
+                            <label for="material_sort_order" class="block text-sm font-medium text-gray-700 mb-1">Порядок</label>
+                            <input type="number" id="material_sort_order" name="sort_order" value="0"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-valravn-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="mt-3 bg-valravn-600 hover:bg-valravn-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-plus mr-2"></i>Добавить
+                    </button>
+                </form>
+
+                <!-- Список материалов -->
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    {% for material_type in material_types %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">{{ material_type.name }}</span>
+                                {% if not material_type.is_active %}
+                                <span class="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Неактивен</span>
+                                {% endif %}
+                            </div>
+                            {% if material_type.category %}
+                            <p class="text-xs text-orange-600 font-medium">{{ material_type.category }}</p>
+                            {% endif %}
+                            {% if material_type.description %}
+                            <p class="text-sm text-gray-600 mt-1">{{ material_type.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-500">#{{ material_type.sort_order }}</span>
+                            <form method="POST" action="/admin/dictionaries/material-types/{{ material_type.id }}/toggle" class="inline">
+                                <button type="submit" 
+                                        class="text-sm {% if material_type.is_active %}text-red-600 hover:text-red-700{% else %}text-green-600 hover:text-green-700{% endif %}">
+                                    {% if material_type.is_active %}
+                                    <i class="fas fa-eye-slash"></i>
+                                    {% else %}
+                                    <i class="fas fa-eye"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Инструкции -->
@@ -170,7 +253,7 @@
             <i class="fas fa-info-circle mr-2"></i>
             Инструкции по использованию
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-blue-800">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-blue-800">
             <div>
                 <h4 class="font-semibold mb-2">Типы операций бюджета:</h4>
                 <ul class="list-disc list-inside space-y-1">
@@ -185,6 +268,15 @@
                     <li>Используются при добавлении предметов в инвентарь</li>
                     <li>Помогают категоризировать предметы</li>
                     <li>Упрощают поиск и фильтрацию</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-2">Типы материалов:</h4>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Используются для указания материала предметов</li>
+                    <li>Группируются по категориям</li>
+                    <li>Заменяют свободный ввод текста</li>
+                    <li>Упрощают группировку в отчетах</li>
                 </ul>
             </div>
         </div>
