@@ -365,6 +365,70 @@ select {
 }
 
 /* КРИТИЧЕСКИ ВАЖНО: Все красные фоны должны иметь белый или черный текст */
+/* Универсальные правила для всех красных элементов с максимальной специфичностью */
+.dark [class*="bg-red"],
+.dark [class*="bg-valravn"] {
+  color: var(--raven-white) !important;
+}
+
+.dark [class*="bg-red"] *,
+.dark [class*="bg-valravn"] * {
+  color: var(--raven-white) !important;
+}
+
+/* Специфичные правила для карточек и контейнеров */
+.dark .bg-red-100,
+.dark .bg-red-200,
+.dark .bg-red-300,
+.dark .bg-red-400,
+.dark .bg-red-500,
+.dark .bg-red-600,
+.dark .bg-red-700,
+.dark .bg-red-800,
+.dark .bg-red-900 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-red-100 *,
+.dark .bg-red-200 *,
+.dark .bg-red-300 *,
+.dark .bg-red-400 *,
+.dark .bg-red-500 *,
+.dark .bg-red-600 *,
+.dark .bg-red-700 *,
+.dark .bg-red-800 *,
+.dark .bg-red-900 * {
+  color: var(--raven-white) !important;
+}
+
+/* Valravn цвета */
+.dark .bg-valravn-50,
+.dark .bg-valravn-100,
+.dark .bg-valravn-200,
+.dark .bg-valravn-300,
+.dark .bg-valravn-400,
+.dark .bg-valravn-500,
+.dark .bg-valravn-600,
+.dark .bg-valravn-700,
+.dark .bg-valravn-800,
+.dark .bg-valravn-900 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-valravn-50 *,
+.dark .bg-valravn-100 *,
+.dark .bg-valravn-200 *,
+.dark .bg-valravn-300 *,
+.dark .bg-valravn-400 *,
+.dark .bg-valravn-500 *,
+.dark .bg-valravn-600 *,
+.dark .bg-valravn-700 *,
+.dark .bg-valravn-800 *,
+.dark .bg-valravn-900 * {
+  color: var(--raven-white) !important;
+}
 /* Красные кнопки и элементы - белый текст на красном фоне */
 .dark .bg-red-500,
 .dark .bg-red-600,
@@ -555,4 +619,150 @@ select {
 .dark .bg-red-100 a:hover,
 .dark .bg-red-200 a:hover {
   color: var(--raven-lighter-gray) !important;
+}
+
+/* МАКСИМАЛЬНО СПЕЦИФИЧНЫЕ ПРАВИЛА ДЛЯ ПРОБЛЕМНЫХ СОЧЕТАНИЙ */
+/* Исправляем все найденные проблемные сочетания bg-red + text-red */
+.dark .bg-red-100.text-red-800,
+.dark .bg-red-50.text-red-700,
+.dark .bg-red-50.text-red-800,
+.dark span.bg-red-100.text-red-800,
+.dark .bg-red-100.border.border-red-200,
+.dark .bg-red-50.border.border-red-300.text-red-700 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+  border-color: var(--raven-bright-red) !important;
+}
+
+/* Hover состояния для проблемных элементов */
+.dark .bg-red-50.hover\:bg-red-100.text-red-700:hover,
+.dark .hover\:bg-red-100.text-red-700:hover {
+  background-color: var(--raven-bright-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* Специфичные правила для админских бейджей */
+.dark span[class*="bg-red-100"][class*="text-red-800"] {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* Правила для JavaScript генерируемых элементов */
+.dark .bg-red-100.text-red-800.border.border-red-200,
+.dark .bg-red-50.text-red-700.border.border-red-200 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+  border-color: var(--raven-bright-red) !important;
+}
+
+/* Исправляем dark: префиксы */
+.dark .dark\:bg-red-900.text-red-800.dark\:text-red-200 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* Универсальное правило для всех красных текстов в темной теме */
+.dark .text-red-700,
+.dark .text-red-800,
+.dark .text-red-900,
+.dark [class*="text-red"] {
+  color: var(--raven-white) !important;
+}
+
+/* Правила для кнопок и интерактивных элементов */
+.dark button[class*="bg-red"],
+.dark a[class*="bg-red"],
+.dark .btn[class*="bg-red"] {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark button[class*="bg-red"]:hover,
+.dark a[class*="bg-red"]:hover,
+.dark .btn[class*="bg-red"]:hover {
+  background-color: var(--raven-bright-red) !important;
+  color: var(--raven-white) !important;
+}
+
+/* КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ ДЛЯ ДАШБОРДА И КАРТОЧЕК */
+/* Исправляем красные карточки из дашборда */
+.dark .bg-red-50.hover\:bg-red-100 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-red-50.hover\:bg-red-100:hover {
+  background-color: var(--raven-bright-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .bg-red-50 .text-red-600,
+.dark .bg-red-50 .text-red-700,
+.dark .bg-red-100 .text-red-600,
+.dark .bg-red-100 .text-red-700,
+.dark .bg-red-100 .text-red-800 {
+  color: var(--raven-white) !important;
+}
+
+/* Исправляем иконки в красных карточках */
+.dark .bg-red-50 i,
+.dark .bg-red-100 i,
+.dark .bg-red-50 .fas,
+.dark .bg-red-100 .fas {
+  color: var(--raven-white) !important;
+}
+
+/* Исправляем текст в красных карточках */
+.dark .bg-red-50 div,
+.dark .bg-red-100 div,
+.dark .bg-red-50 span,
+.dark .bg-red-100 span {
+  color: var(--raven-white) !important;
+}
+
+/* Исправляем hover эффекты для красных карточек */
+.dark .bg-red-50:hover i,
+.dark .bg-red-100:hover i,
+.dark .bg-red-50:hover .fas,
+.dark .bg-red-100:hover .fas,
+.dark .bg-red-50:hover div,
+.dark .bg-red-100:hover div,
+.dark .bg-red-50:hover span,
+.dark .bg-red-100:hover span {
+  color: var(--raven-white) !important;
+}
+
+/* Специфичные правила для dark: классов */
+.dark .dark\:bg-red-900 {
+  background-color: var(--raven-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .dark\:bg-red-900 i,
+.dark .dark\:bg-red-900 .fas,
+.dark .dark\:bg-red-900 div,
+.dark .dark\:bg-red-900 span {
+  color: var(--raven-white) !important;
+}
+
+.dark .dark\:hover\:bg-red-800:hover {
+  background-color: var(--raven-bright-red) !important;
+  color: var(--raven-white) !important;
+}
+
+.dark .dark\:hover\:bg-red-800:hover i,
+.dark .dark\:hover\:bg-red-800:hover .fas,
+.dark .dark\:hover\:bg-red-800:hover div,
+.dark .dark\:hover\:bg-red-800:hover span {
+  color: var(--raven-white) !important;
+}
+
+/* Исправляем все text-red-* классы в темной теме */
+.dark .text-red-300,
+.dark .text-red-400,
+.dark .text-red-500,
+.dark .text-red-600,
+.dark .dark\:text-red-300,
+.dark .dark\:text-red-400 {
+  color: var(--raven-white) !important;
 } 
