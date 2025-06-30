@@ -43,7 +43,7 @@ class Budget(Base):
     screenshot_size = Column(Integer, nullable=True)  # Размер скриншота в байтах
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     created_by_user = relationship("User", back_populates="budget_entries")
@@ -74,7 +74,7 @@ class Inventory(Base):
     image_size = Column(Integer, nullable=True)  # Размер изображения в байтах
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     owner_user = relationship("User", foreign_keys=[owner_user_id], back_populates="owned_inventory")
@@ -104,7 +104,7 @@ class BudgetType(Base):
     is_active = Column(Boolean, default=True)           # Активен ли тип
     sort_order = Column(Integer, default=0)             # Порядок сортировки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class InventoryItemType(Base):
     """Справочник типов предметов инвентаря"""
@@ -116,7 +116,7 @@ class InventoryItemType(Base):
     is_active = Column(Boolean, default=True)           # Активен ли тип
     sort_order = Column(Integer, default=0)             # Порядок сортировки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     inventory_items = relationship("Inventory", back_populates="item_type_ref")
@@ -132,7 +132,7 @@ class InventoryMaterialType(Base):
     is_active = Column(Boolean, default=True)           # Активен ли материал
     sort_order = Column(Integer, default=0)             # Порядок сортировки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     inventory_items = relationship("Inventory", back_populates="material_type_ref")

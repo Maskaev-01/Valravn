@@ -52,9 +52,13 @@ def create_or_update_vk_user(db: Session, vk_id: str, first_name: str, last_name
     
     if user:
         # Обновляем данные существующего VK пользователя
-        user.first_name = first_name
-        user.last_name = last_name
-        user.avatar_url = avatar_url
+        # Обновляем имена только если они не пустые (приоритет русским именам)
+        if first_name and first_name.strip():
+            user.first_name = first_name
+        if last_name and last_name.strip():
+            user.last_name = last_name
+        if avatar_url:
+            user.avatar_url = avatar_url
         if email and not user.email:
             user.email = email
         user.is_admin = 1 if whitelist_entry.is_admin else 0

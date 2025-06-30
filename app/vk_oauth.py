@@ -80,6 +80,7 @@ class VKOAuth:
                     'user_ids': resolved_id,
                     'fields': 'photo_100,screen_name,contacts',  # Добавляем contacts для получения email
                     'access_token': self.service_token,
+                    'lang': 'ru',  # Важно! Получаем имена на русском языке
                     'v': '5.131'
                 }
                 

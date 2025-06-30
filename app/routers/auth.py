@@ -277,20 +277,31 @@ async def vk_id_process(
             print(f"Missing user_id: {user_id}")  # Отладка
             raise HTTPException(status_code=400, detail="Нет VK user_id")
         
-        # Пытаемся получить полные данные пользователя из VK API
+        # Пытаемся получить полные данные пользователя из VK API с русскими именами
         if vk_oauth.has_service_token():
             try:
                 user_info = await vk_oauth.get_user_info(user_id)
                 if user_info:
-                    first_name = user_info["first_name"] or first_name
-                    last_name = user_info["last_name"] or last_name
-                    photo_100 = user_info["photo_100"] or photo_100
+                    # Приоритет данным из VK API (они должны быть на русском языке)
+                    api_first_name = user_info.get("first_name", "").strip()
+                    api_last_name = user_info.get("last_name", "").strip()
+                    
+                    # Используем данные из API если они не пустые
+                    if api_first_name:
+                        first_name = api_first_name
+                    if api_last_name:
+                        last_name = api_last_name
+                        
+                    photo_100 = user_info.get("photo_100") or photo_100
                     user_id = user_info["id"]  # Используем числовой ID
                     # Если email не был получен из SDK, пробуем из API
                     if not email:
                         email = user_info.get("email")
+                        
+                    print(f"Got Russian names from VK API: {first_name} {last_name}")  # Отладка
             except Exception as e:
                 print(f"Failed to get additional user info: {e}")
+                print(f"Using SDK names: {first_name} {last_name}")  # Отладка
         
         # Fallback для пустых имен только если не удалось получить из API
         if not first_name and not last_name:
