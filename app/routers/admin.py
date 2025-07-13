@@ -130,7 +130,6 @@ async def admin_delete_budget(budget_id: int, admin_user: User = Depends(get_adm
     return RedirectResponse(url="/admin/budget", status_code=302)
 
 @router.get("/admin/users", response_class=HTMLResponse)
-@require_permission("manage_users")
 async def admin_users(
     request: Request, 
     admin_user: User = Depends(get_admin_user), 
@@ -138,6 +137,10 @@ async def admin_users(
     success: str = Query(None),
     error: str = Query(None)
 ):
+    # Проверяем разрешение на управление пользователями
+    from app.permissions import check_user_permission
+    if not check_user_permission(admin_user, "manage_users"):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для управления пользователями")
     # Получаем пользователей с их статистикой
     users = db.query(User).order_by(User.created_at.desc()).all()
     

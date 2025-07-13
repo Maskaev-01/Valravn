@@ -114,10 +114,27 @@ def require_permission(permission: str):
         @wraps(func)
         async def wrapper(
             request: Request,
-            current_user: User = Depends(get_current_user_from_cookie),
             db: Session = Depends(get_db),
             *args, **kwargs
         ):
+            # Получаем пользователя из kwargs
+            current_user = None
+            for key, value in kwargs.items():
+                if isinstance(value, User):
+                    current_user = value
+                    break
+            
+            # Если не нашли в kwargs, ищем в args
+            if not current_user:
+                for arg in args:
+                    if isinstance(arg, User):
+                        current_user = arg
+                        break
+            
+            # Если всё ещё не нашли, получаем через dependency
+            if not current_user:
+                current_user = await get_current_user_from_cookie(request, db)
+            
             # Принудительно обновляем объект из базы данных
             db.refresh(current_user)
             
@@ -132,7 +149,7 @@ def require_permission(permission: str):
             # Обновляем активность пользователя
             update_user_activity(current_user, db, f"accessed_{permission}")
             
-            return await func(request, current_user, db, *args, **kwargs)
+            return await func(request, db, *args, **kwargs)
         return wrapper
     return decorator
 
