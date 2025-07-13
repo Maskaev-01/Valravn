@@ -203,9 +203,16 @@ async def get_current_user_from_cookie(request: Request, db: Session = Depends(g
     
     return user
 
-async def get_admin_user(current_user: User = Depends(get_current_user_from_cookie)):
-    if current_user.is_admin != 1:
+async def get_admin_user(current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
+    # Принудительно обновляем объект из базы данных
+    db.refresh(current_user)
+    
+    # Проверяем права администратора (используем новую ролевую систему)
+    if current_user.role not in ['admin', 'superadmin'] and current_user.is_admin != 1:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    print(f"DEBUG ADMIN: User {current_user.username}, role: {getattr(current_user, 'role', 'NOT_FOUND')}, is_admin: {current_user.is_admin}")
+    
     return current_user
 
 async def get_current_user_optional(request: Request, db: Session = Depends(get_db)):
