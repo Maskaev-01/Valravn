@@ -157,6 +157,10 @@ def check_user_permission(user: User, permission: str) -> bool:
     """
     Проверяет, есть ли у пользователя указанное разрешение
     """
+    # Проверяем, что user является объектом User
+    if not hasattr(user, 'role'):
+        return False
+    
     # Суперадмины имеют все права
     if user.role == 'superadmin':
         return True
@@ -181,6 +185,10 @@ def check_user_role(user: User, required_role: str) -> bool:
     """
     Проверяет, соответствует ли роль пользователя требуемой
     """
+    # Проверяем, что user является объектом User
+    if not hasattr(user, 'role'):
+        return False
+    
     role_hierarchy = {
         'guest': 0,
         'member': 1,
@@ -198,6 +206,10 @@ def get_user_permissions(user: User) -> List[str]:
     """
     Возвращает список всех разрешений пользователя
     """
+    # Проверяем, что user является объектом User
+    if not hasattr(user, 'role'):
+        return []
+    
     if user.role not in ROLE_PERMISSIONS:
         return []
     
