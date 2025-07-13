@@ -159,26 +159,40 @@ def check_user_permission(user: User, permission: str) -> bool:
     """
     # Проверяем, что user является объектом User
     if not hasattr(user, 'role'):
+        print(f"DEBUG: User object has no 'role' attribute")
         return False
+    
+    print(f"DEBUG: Checking permission '{permission}' for user '{user.username}' with role '{user.role}'")
     
     # Суперадмины имеют все права
     if user.role == 'superadmin':
+        print(f"DEBUG: User is superadmin, granting permission '{permission}'")
         return True
     
     # Проверяем роль пользователя
     if user.role not in ROLE_PERMISSIONS:
+        print(f"DEBUG: User role '{user.role}' not found in ROLE_PERMISSIONS")
         return False
     
     # Проверяем разрешения роли
     if permission not in ROLE_PERMISSIONS[user.role]:
+        print(f"DEBUG: Permission '{permission}' not found in role '{user.role}' permissions")
         return False
     
     # Проверяем индивидуальные разрешения пользователя
     if user.permissions:
-        user_perms = user.permissions if isinstance(user.permissions, dict) else json.loads(user.permissions)
-        if permission in user_perms and not user_perms[permission]:
-            return False
+        try:
+            user_perms = user.permissions if isinstance(user.permissions, dict) else json.loads(user.permissions)
+            print(f"DEBUG: User permissions: {user_perms}")
+            if permission in user_perms and not user_perms[permission]:
+                print(f"DEBUG: Permission '{permission}' explicitly denied in user permissions")
+                return False
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"DEBUG: Error parsing user permissions: {e}")
+            # Если не удается распарсить permissions, игнорируем их
+            pass
     
+    print(f"DEBUG: Permission '{permission}' granted")
     return True
 
 def check_user_role(user: User, required_role: str) -> bool:
