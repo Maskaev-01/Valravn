@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+Allow: /auth/login
+Allow: /auth/register
+Allow: /dashboard
+Allow: /inventory
+Allow: /reports
+Allow: /profile
+
+# Запрещаем индексацию админ-панели и API
+Disallow: /admin/
+Disallow: /auth/admin/
+Disallow: /api/
+Disallow: /static/uploads/
+Disallow: /moderation
+
+# Разрешаем статические ресурсы
+Allow: /static/css/
+Allow: /static/js/
+Allow: /static/images/
+
+# Sitemap
+Sitemap: https://valravn-budget.onrender.com/sitemap.xml 

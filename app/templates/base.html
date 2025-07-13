@@ -7,6 +7,27 @@
     {% block seo_meta %}{% endblock %}
     {% block og_meta %}{% endblock %}
     {% block schema_meta %}{% endblock %}
+    
+    <!-- Schema.org структурированные данные -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Valravn",
+        "description": "Клуб исторической реконструкции Valravn - система управления бюджетом и инвентарём",
+        "url": "https://valravn-budget.onrender.com",
+        "logo": "https://valravn-budget.onrender.com/static/images/logo.png",
+        "sameAs": [
+            "https://vk.com/valravn"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "availableLanguage": "Russian"
+        }
+    }
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', path='/css/style.css') }}" rel="stylesheet">

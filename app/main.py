@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.database import get_db, engine
@@ -110,6 +110,54 @@ async def test_routes():
         },
         "status": "all routes configured"
     }
+
+@app.get("/robots.txt")
+async def robots_txt():
+    """Возвращает robots.txt для поисковых роботов"""
+    return FileResponse("app/static/robots.txt", media_type="text/plain")
+
+@app.get("/sitemap.xml")
+async def sitemap_xml(request: Request, db: Session = Depends(get_db)):
+    """Генерирует sitemap.xml для поисковых систем"""
+    base_url = "https://valravn-budget.onrender.com"
+    
+    # Основные страницы
+    pages = [
+        {"url": "/", "priority": "1.0", "changefreq": "daily"},
+        {"url": "/auth/login", "priority": "0.8", "changefreq": "monthly"},
+        {"url": "/auth/register", "priority": "0.8", "changefreq": "monthly"},
+        {"url": "/dashboard", "priority": "0.9", "changefreq": "daily"},
+        {"url": "/inventory", "priority": "0.9", "changefreq": "weekly"},
+        {"url": "/reports", "priority": "0.8", "changefreq": "weekly"},
+    ]
+    
+    # Добавляем страницы инвентаря
+    try:
+        from app.models.models import Inventory
+        inventory_items = db.query(Inventory).filter(Inventory.is_club_item == True).limit(100).all()
+        for item in inventory_items:
+            pages.append({
+                "url": f"/inventory/{item.id}",
+                "priority": "0.6",
+                "changefreq": "monthly"
+            })
+    except Exception:
+        pass  # Игнорируем ошибки при генерации sitemap
+    
+    # Генерируем XML
+    sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for page in pages:
+        sitemap += f'  <url>\n'
+        sitemap += f'    <loc>{base_url}{page["url"]}</loc>\n'
+        sitemap += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
+        sitemap += f'    <priority>{page["priority"]}</priority>\n'
+        sitemap += f'  </url>\n'
+    
+    sitemap += '</urlset>'
+    
+    return Response(content=sitemap, media_type="application/xml")
 
 @app.get("/health")
 async def health_check():

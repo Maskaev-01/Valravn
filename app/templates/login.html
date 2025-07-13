@@ -15,6 +15,24 @@
 <meta property="og:image" content="https://valravn-budget.onrender.com/static/images/og.png"/>
 {% endblock %}
 
+{% block schema_meta %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Вход в систему Valravn",
+    "description": "Страница авторизации для участников клуба исторической реконструкции Valravn",
+    "url": "https://valravn-budget.onrender.com/auth/login",
+    "mainEntity": {
+        "@type": "WebApplication",
+        "name": "Valravn Budget Management",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web Browser"
+    }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-md w-full space-y-8 px-4 sm:px-6 lg:px-8">
     <div>
