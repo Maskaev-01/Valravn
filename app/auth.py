@@ -194,6 +194,9 @@ async def get_current_user_from_cookie(request: Request, db: Session = Depends(g
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
+    
+    db.refresh(user)  # Гарантируем загрузку всех новых полей
+    
     return user
 
 async def get_admin_user(current_user: User = Depends(get_current_user_from_cookie)):
