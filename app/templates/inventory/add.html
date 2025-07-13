@@ -190,18 +190,19 @@
                                 <option value="">Выберите материал</option>
                                 {% set current_category = None %}
                                 {% for material in material_types %}
-                                    {% if material.category != current_category %}
-                                        {% if current_category is not none %}
-                                            </optgroup>
+                                    {% if material.category %}
+                                        {% if material.category != current_category %}
+                                            {% if current_category is not none %}</optgroup>{% endif %}
+                                            <optgroup label="{{ material.category }}">
+                                            {% set current_category = material.category %}
                                         {% endif %}
-                                        <optgroup label="{{ material.category }}">
-                                        {% set current_category = material.category %}
+                                        <option value="{{ material.id }}">{{ material.name }}</option>
+                                    {% else %}
+                                        {% if current_category is not none %}</optgroup>{% set current_category = None %}{% endif %}
+                                        <option value="{{ material.id }}">{{ material.name }}</option>
                                     {% endif %}
-                                    <option value="{{ material.id }}">{{ material.name }}</option>
                                 {% endfor %}
-                                {% if current_category is not none %}
-                                    </optgroup>
-                                {% endif %}
+                                {% if current_category is not none %}</optgroup>{% endif %}
                             </select>
                             <p class="mt-1 text-sm text-gray-500">
                                 Выберите основной материал предмета из списка

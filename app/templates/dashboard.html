@@ -142,7 +142,6 @@
                 </a>
                 
                 {% if user.is_admin %}
-                <!-- НОВАЯ ССЫЛКА: Модерация для админов -->
                 <a href="/moderation" 
                    class="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900 dark:hover:bg-yellow-800 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 text-center transition-colors group relative">
                     <i class="fas fa-gavel text-2xl text-yellow-600 dark:text-yellow-400 mb-2 group-hover:text-yellow-700 dark:group-hover:text-yellow-300"></i>
@@ -155,15 +154,15 @@
                 </a>
                 
                 <a href="/admin" 
-                   class="bg-red-50 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 rounded-lg p-4 text-center transition-colors group">
-                    <i class="fas fa-cogs text-2xl text-red-600 dark:text-red-400 mb-2 group-hover:text-red-700 dark:group-hover:text-red-300"></i>
-                    <div class="text-sm font-medium text-red-700 dark:text-red-300">Админ панель</div>
+                   class="bg-valravn-50 hover:bg-valravn-100 dark:bg-raven-900 dark:hover:bg-raven-800 border border-valravn-200 dark:border-raven-700 rounded-lg p-4 text-center transition-colors group">
+                    <i class="fas fa-cogs text-2xl text-valravn-600 dark:text-raven-400 mb-2 group-hover:text-valravn-700 dark:group-hover:text-raven-300"></i>
+                    <div class="text-sm font-medium text-valravn-700 dark:text-raven-300">Админ панель</div>
                 </a>
                 {% else %}
                 <a href="/admin" 
-                   class="bg-red-50 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-800 border border-red-200 dark:border-red-700 rounded-lg p-4 text-center transition-colors group">
-                    <i class="fas fa-cogs text-2xl text-red-600 dark:text-red-400 mb-2 group-hover:text-red-700 dark:group-hover:text-red-300"></i>
-                    <div class="text-sm font-medium text-red-700 dark:text-red-300">Админ панель</div>
+                   class="bg-valravn-50 hover:bg-valravn-100 dark:bg-raven-900 dark:hover:bg-raven-800 border border-valravn-200 dark:border-raven-700 rounded-lg p-4 text-center transition-colors group">
+                    <i class="fas fa-cogs text-2xl text-valravn-600 dark:text-raven-400 mb-2 group-hover:text-valravn-700 dark:group-hover:text-raven-300"></i>
+                    <div class="text-sm font-medium text-valravn-700 dark:text-raven-300">Админ панель</div>
                 </a>
                 {% endif %}
             </div>

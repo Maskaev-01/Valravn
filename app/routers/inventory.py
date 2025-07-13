@@ -529,9 +529,9 @@ async def view_inventory_item(
     if not item:
         raise HTTPException(status_code=404, detail="Предмет не найден")
     
-    # Найдем похожие предметы того же владельца или того же типа
+    # Показываем только предметы того же владельца (исправлено)
     similar_items = db.query(Inventory).filter(
-        (Inventory.owner == item.owner) | (Inventory.item_type == item.item_type),
+        Inventory.owner == item.owner,
         Inventory.id != item.id
     ).limit(5).all()
     
