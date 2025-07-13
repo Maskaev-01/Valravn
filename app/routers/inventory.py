@@ -192,7 +192,13 @@ async def add_inventory_page(
     # Получаем материалы из справочника
     from app.models.models import InventoryMaterialType
     material_types = db.query(InventoryMaterialType).filter(InventoryMaterialType.is_active == True).order_by(InventoryMaterialType.sort_order, InventoryMaterialType.name).all()
-    
+
+    # Группируем материалы по категориям
+    from collections import defaultdict
+    materials_by_category = defaultdict(list)
+    for material in material_types:
+        materials_by_category[material.category or "Без категории"].append(material)
+
     return templates.TemplateResponse("inventory/add.html", {
         "request": request,
         "user": current_user,
@@ -201,7 +207,8 @@ async def add_inventory_page(
         "is_admin": is_admin,
         "owner_preset": owner_preset,
         "item_types": item_types,
-        "material_types": material_types
+        # "material_types": material_types,  # больше не нужно
+        "materials_by_category": materials_by_category
     })
 
 @router.post("/inventory/add")

@@ -188,21 +188,19 @@
                                     name="material_type"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                                 <option value="">Выберите материал</option>
-                                {% set current_category = None %}
-                                {% for material in material_types %}
-                                    {% if material.category %}
-                                        {% if material.category != current_category %}
-                                            {% if current_category is not none %}</optgroup>{% endif %}
-                                            <optgroup label="{{ material.category }}">
-                                            {% set current_category = material.category %}
-                                        {% endif %}
-                                        <option value="{{ material.id }}">{{ material.name }}</option>
+                                {% for category, materials in materials_by_category.items() %}
+                                    {% if category != "Без категории" %}
+                                        <optgroup label="{{ category }}">
+                                            {% for material in materials %}
+                                                <option value="{{ material.id }}">{{ material.name }}</option>
+                                            {% endfor %}
+                                        </optgroup>
                                     {% else %}
-                                        {% if current_category is not none %}</optgroup>{% set current_category = None %}{% endif %}
-                                        <option value="{{ material.id }}">{{ material.name }}</option>
+                                        {% for material in materials %}
+                                            <option value="{{ material.id }}">{{ material.name }}</option>
+                                        {% endfor %}
                                     {% endif %}
                                 {% endfor %}
-                                {% if current_category is not none %}</optgroup>{% endif %}
                             </select>
                             <p class="mt-1 text-sm text-gray-500">
                                 Выберите основной материал предмета из списка
