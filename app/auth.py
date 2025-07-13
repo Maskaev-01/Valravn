@@ -195,7 +195,11 @@ async def get_current_user_from_cookie(request: Request, db: Session = Depends(g
     if user is None:
         raise credentials_exception
     
-    db.refresh(user)  # Гарантируем загрузку всех новых полей
+    # Принудительно обновляем объект из базы данных
+    db.refresh(user)
+    
+    # Проверяем, что поля загружены
+    print(f"DEBUG AUTH: User {user.username}, role: {getattr(user, 'role', 'NOT_FOUND')}, permissions: {getattr(user, 'permissions', 'NOT_FOUND')}")
     
     return user
 
