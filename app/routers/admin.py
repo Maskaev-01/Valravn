@@ -161,13 +161,28 @@ async def admin_users(
             db.refresh(stats)
         
         # Обновляем статистику пользователя
+        # Ищем взносы по contributor_name (для старых записей) и created_by_user_id (для новых)
         user_contributions = db.query(Budget).filter(
-            Budget.created_by_user_id == user.id,
-            Budget.is_approved == True
+            (Budget.created_by_user_id == user.id) | 
+            (Budget.contributor_name == user.username),
+            Budget.price > 0
         ).all()
         
-        stats.total_contributions = sum([c.price for c in user_contributions if c.price > 0])
-        stats.contributions_count = len(user_contributions)
+        # Также проверяем одобренные записи отдельно
+        approved_contributions = db.query(Budget).filter(
+            (Budget.created_by_user_id == user.id) | 
+            (Budget.contributor_name == user.username),
+            Budget.is_approved == True,
+            Budget.price > 0
+        ).all()
+        
+
+        
+
+        
+        # Используем все записи для отображения, но считаем только одобренные
+        stats.total_contributions = sum([c.price for c in approved_contributions])
+        stats.contributions_count = len(approved_contributions)
         stats.inventory_count = db.query(Inventory).filter(Inventory.owner_user_id == user.id).count()
         stats.club_inventory_count = db.query(Inventory).filter(Inventory.is_club_item == True).count()
         stats.achievements_count = db.query(UserAchievement).filter(
@@ -823,8 +838,6 @@ async def approve_all_contributions(
         approved_count = 0
         for contribution in pending_contributions:
             contribution.is_approved = True
-            contribution.approved_at = datetime.utcnow()
-            contribution.approved_by = admin_user.id
             approved_count += 1
         
         db.commit()
