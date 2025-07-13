@@ -27,7 +27,6 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/dashboard", response_class=HTMLResponse)
-@require_permission("view_dashboard")
 async def dashboard(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
@@ -87,7 +86,6 @@ async def dashboard(
     })
 
 @router.get("/api/dashboard/stats")
-@require_permission("view_dashboard")
 async def get_dashboard_stats(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
@@ -139,7 +137,6 @@ async def get_dashboard_stats(
     }
 
 @router.get("/profile", response_class=HTMLResponse)
-@require_permission("view_dashboard")
 async def profile_page(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
@@ -194,7 +191,6 @@ async def profile_page(
     })
 
 @router.post("/profile/update-settings")
-@require_permission("view_dashboard")
 async def update_profile_settings(
     request: Request,
     theme: str = Form(...),
@@ -234,7 +230,6 @@ async def update_profile_settings(
         return RedirectResponse(url="/profile?error=Ошибка обновления настроек", status_code=302)
 
 @router.get("/analytics", response_class=HTMLResponse)
-@require_permission("view_dashboard")
 async def analytics_page(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
@@ -286,7 +281,6 @@ async def analytics_page(
     })
 
 @router.get("/api/analytics/contributions-chart")
-@require_permission("view_dashboard")
 async def get_contributions_chart(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
@@ -314,7 +308,6 @@ async def get_contributions_chart(
     return chart_data
 
 @router.get("/achievements", response_class=HTMLResponse)
-@require_permission("view_dashboard")
 async def achievements_page(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
@@ -344,7 +337,6 @@ async def achievements_page(
     })
 
 @router.get("/activity", response_class=HTMLResponse)
-@require_permission("view_dashboard")
 async def activity_page(
     request: Request,
     current_user: User = Depends(get_current_user_from_cookie),

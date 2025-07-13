@@ -16,7 +16,6 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/dashboard", response_class=HTMLResponse)
-@require_permission("view_dashboard")
 async def dashboard(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     # Получаем последние взносы (только одобренные)
     recent_contributions = db.query(Budget).filter(
