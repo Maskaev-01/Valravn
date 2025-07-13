@@ -118,6 +118,11 @@ def require_permission(permission: str):
             db: Session = Depends(get_db),
             *args, **kwargs
         ):
+            # Принудительно обновляем объект из базы данных
+            db.refresh(current_user)
+            
+            print(f"DEBUG DECORATOR: User {current_user.username}, role: {getattr(current_user, 'role', 'NOT_FOUND')}")
+            
             if not check_user_permission(current_user, permission):
                 raise HTTPException(
                     status_code=403, 
