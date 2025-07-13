@@ -149,7 +149,7 @@ def require_permission(permission: str):
             # Обновляем активность пользователя
             update_user_activity(current_user, db, f"accessed_{permission}")
             
-            return await func(request, db, *args, **kwargs)
+            return await func(request, current_user, db, *args, **kwargs)
         return wrapper
     return decorator
 

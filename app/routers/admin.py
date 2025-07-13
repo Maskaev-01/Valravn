@@ -144,11 +144,38 @@ async def admin_users(
     # Получаем пользователей с их статистикой
     users = db.query(User).order_by(User.created_at.desc()).all()
     
+    # Обновляем объекты пользователей из базы данных
+    for user in users:
+        db.refresh(user)
+    
     # Получаем статистику для каждого пользователя
-    from app.models.models import UserStats
+    from app.models.models import UserStats, Budget, Inventory, UserAchievement
     user_stats = {}
     for user in users:
         stats = db.query(UserStats).filter(UserStats.user_id == user.id).first()
+        if not stats:
+            # Создаем новую статистику если её нет
+            stats = UserStats(user_id=user.id)
+            db.add(stats)
+            db.commit()
+            db.refresh(stats)
+        
+        # Обновляем статистику пользователя
+        user_contributions = db.query(Budget).filter(
+            Budget.created_by_user_id == user.id,
+            Budget.is_approved == True
+        ).all()
+        
+        stats.total_contributions = sum([c.price for c in user_contributions if c.price > 0])
+        stats.contributions_count = len(user_contributions)
+        stats.inventory_count = db.query(Inventory).filter(Inventory.owner_user_id == user.id).count()
+        stats.club_inventory_count = db.query(Inventory).filter(Inventory.is_club_item == True).count()
+        stats.achievements_count = db.query(UserAchievement).filter(
+            UserAchievement.user_id == user.id,
+            UserAchievement.is_active == True
+        ).count()
+        
+        db.commit()
         user_stats[user.id] = stats
     
     # Получаем разрешения для отображения
