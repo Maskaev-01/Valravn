@@ -925,3 +925,41 @@ body.dark .bg-valravn-900 {
 [class*="dark"] [class*="bg-valravn"] * {
   color: var(--raven-white) !important;
 } 
+
+/* Универсальная кнопка Valravn */
+.val-btn {
+  background-color: #2563eb; /* blue-600 */
+  color: #fff;
+  border: 1px solid #1d4ed8; /* blue-700 */
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.val-btn:hover, .val-btn:focus {
+  background-color: #1d4ed8; /* blue-700 */
+  color: #fff;
+  border-color: #1e40af; /* blue-800 */
+}
+.val-btn:disabled, .val-btn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+html.dark .val-btn {
+  background-color: #A4161A !important;
+  color: #fff !important;
+  border-color: #A4161A !important;
+}
+html.dark .val-btn:hover, html.dark .val-btn:focus {
+  background-color: #BA181B !important;
+  color: #fff !important;
+  border-color: #BA181B !important;
+} 
