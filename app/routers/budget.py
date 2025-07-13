@@ -9,12 +9,14 @@ from app.database import get_db
 from app.models.models import Budget, User
 from app.models.schemas import BudgetCreate, BudgetApproval
 from app.auth import get_current_user_from_cookie, get_admin_user, get_current_user_optional
+from app.permissions import require_permission, check_user_permission, update_user_activity
 from app.file_manager import file_manager
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/dashboard", response_class=HTMLResponse)
+@require_permission("view_dashboard")
 async def dashboard(request: Request, current_user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     # Получаем последние взносы (только одобренные)
     recent_contributions = db.query(Budget).filter(

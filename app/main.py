@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, engine
 from app.models.models import User
 from app.models import models
-from app.routers import auth, budget, admin, inventory
+from app.routers import auth, budget, admin, inventory, dashboard
 from app.auth import get_current_user_from_cookie
 from sqlalchemy import text
 from fastapi.exception_handlers import http_exception_handler
@@ -73,6 +73,7 @@ app.include_router(auth.router)
 app.include_router(budget.router)
 app.include_router(admin.router)
 app.include_router(inventory.router)
+app.include_router(dashboard.router)
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: Session = Depends(get_db)):

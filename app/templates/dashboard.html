@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Панель управления - Valravn{% endblock %}
+{% block title %}Личный кабинет - Valravn{% endblock %}
 
 {% block seo_meta %}
-<meta name="description" content="Панель управления финансами и инвентарём клуба исторической реконструкции Valravn. Отчёты, участники, инвентарь и модерация — всё в одном месте."/>
-<meta name="keywords" content="Valravn, бюджет, панель управления, отчёты, инвентарь, историческая реконструкция, клуб"/>
+<meta name="description" content="Личный кабинет участника клуба Valravn. Управление профилем, статистика, достижения и аналитика."/>
+<meta name="keywords" content="Valravn, личный кабинет, профиль, статистика, достижения, аналитика, клуб"/>
 {% endblock %}
 
 {% block og_meta %}
-<meta property="og:title" content="Панель управления Valravn"/>
-<meta property="og:description" content="Следите за финансами клуба, вносите взносы и управляйте инвентарём."/>
+<meta property="og:title" content="Личный кабинет Valravn"/>
+<meta property="og:description" content="Персональная панель управления профилем и статистикой участника клуба."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://valravn-budget.onrender.com/dashboard"/>
 <meta property="og:image" content="https://valravn-budget.onrender.com/static/images/og.png"/>
@@ -19,13 +19,28 @@
 <div class="px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            <i class="fas fa-chart-line mr-3 text-valravn-600 dark:text-raven-400"></i>
-            Панель управления
-        </h1>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Добро пожаловать, {{ user.username }}! Здесь вы можете отслеживать финансы клуба.
-        </p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    <i class="fas fa-user-circle mr-3 text-valravn-600 dark:text-raven-400"></i>
+                    Личный кабинет
+                </h1>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Добро пожаловать, {{ user.username }}! Ваша роль: <span class="font-semibold text-valravn-600 dark:text-raven-400">{{ role_display_name }}</span>
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">{{ role_description }}</p>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Последняя активность</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">
+                    {% if user.last_activity %}
+                        {{ user.last_activity.strftime('%d.%m.%Y %H:%M') }}
+                    {% else %}
+                        Недавно
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Уведомления для админов -->
@@ -50,24 +65,21 @@
     </div>
     {% endif %}
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <!-- Total Income -->
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
+    <!-- Personal Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                            <i class="fas fa-arrow-up text-green-600 dark:text-green-400"></i>
-                        </div>
+                        <i class="fas fa-wallet text-green-600 text-2xl"></i>
                     </div>
-                    <div class="ml-4 w-0 flex-1">
+                    <div class="ml-5 w-0 flex-1">
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                Общий доход
+                                Мои взносы
                             </dt>
-                            <dd class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                                {{ "{:,.0f}".format(income_sum) }} ₽
+                            <dd class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                {{ "%.2f"|format(user_stats.total_contributions or 0) }}₽
                             </dd>
                         </dl>
                     </div>
@@ -75,22 +87,19 @@
             </div>
         </div>
 
-        <!-- Total Expenses -->
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-valravn-50 dark:bg-red-900 rounded-full flex items-center justify-center">
-                            <i class="fas fa-arrow-down text-valravn-600 dark:text-red-400"></i>
-                        </div>
+                        <i class="fas fa-box text-blue-600 text-2xl"></i>
                     </div>
-                    <div class="ml-4 w-0 flex-1">
+                    <div class="ml-5 w-0 flex-1">
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                Общий расход
+                                Мой инвентарь
                             </dt>
-                            <dd class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                                {{ "{:,.0f}".format(expenses_sum) }} ₽
+                            <dd class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                {{ user_stats.inventory_count or 0 }}
                             </dd>
                         </dl>
                     </div>
@@ -98,27 +107,109 @@
             </div>
         </div>
 
-        <!-- Current Balance -->
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-valravn-50 dark:bg-raven-900 rounded-full flex items-center justify-center">
-                            <i class="fas fa-balance-scale text-valravn-600 dark:text-raven-400"></i>
-                        </div>
+                        <i class="fas fa-trophy text-yellow-600 text-2xl"></i>
                     </div>
-                    <div class="ml-4 w-0 flex-1">
+                    <div class="ml-5 w-0 flex-1">
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                Текущий баланс
+                                Достижения
                             </dt>
-                            <dd class="text-2xl font-semibold {{ 'text-green-600 dark:text-green-400' if balance > 0 else 'text-red-600 dark:text-red-400' if balance < 0 else 'text-gray-900 dark:text-gray-100' }}">
-                                {{ "{:,.0f}".format(balance) }} ₽
+                            <dd class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                {{ user_stats.achievements_count or 0 }}
                             </dd>
                         </dl>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chart-line text-purple-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                Активность
+                            </dt>
+                            <dd class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                {{ user_stats.contributions_count or 0 }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <i class="fas fa-bolt text-yellow-500 mr-2"></i>Быстрые действия
+            </h3>
+            <div class="space-y-3">
+                <a href="/add-contribution" class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                    <i class="fas fa-plus-circle text-green-600 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Добавить взнос</span>
+                </a>
+                <a href="/inventory/add" class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                    <i class="fas fa-box text-blue-600 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Добавить предмет</span>
+                </a>
+                <a href="/profile" class="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                    <i class="fas fa-user-edit text-purple-600 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Редактировать профиль</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <i class="fas fa-trophy text-yellow-500 mr-2"></i>Последние достижения
+            </h3>
+            {% if achievements %}
+                <div class="space-y-3">
+                    {% for achievement in achievements[:3] %}
+                    <div class="flex items-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <i class="fas fa-medal text-yellow-600 mr-3"></i>
+                        <div>
+                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ achievement.achievement_name }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-500">{{ achievement.earned_at.strftime('%d.%m.%Y') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-sm text-gray-500 dark:text-gray-500">Пока нет достижений</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                <i class="fas fa-clock text-blue-500 mr-2"></i>Последняя активность
+            </h3>
+            {% if recent_activity %}
+                <div class="space-y-3">
+                    {% for activity in recent_activity[:3] %}
+                    <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <i class="fas fa-circle text-green-500 mr-3 text-xs"></i>
+                        <div>
+                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ activity.action }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-500">{{ activity.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-sm text-gray-500 dark:text-gray-500">Нет активности</p>
+            {% endif %}
         </div>
     </div>
 

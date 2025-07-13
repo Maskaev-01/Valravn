@@ -10,7 +10,14 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=True)  # Теперь может быть null для VK users
-    is_admin = Column(Integer, default=0)  # 0 - обычный пользователь, 1 - админ
+    is_admin = Column(Integer, default=0)  # 0 - обычный пользователь, 1 - админ (для обратной совместимости)
+    
+    # Расширенная ролевая модель
+    role = Column(String(20), default='member', index=True)  # guest, member, moderator, admin, superadmin
+    permissions = Column(JSON, default={})  # JSON с разрешениями
+    last_activity = Column(DateTime(timezone=True), server_default=func.now())
+    profile_settings = Column(JSON, default={})  # Настройки профиля
+    notification_settings = Column(JSON, default={})  # Настройки уведомлений
     
     # VK OAuth поля
     vk_id = Column(String, unique=True, index=True, nullable=True)  # VK User ID
@@ -26,6 +33,9 @@ class User(Base):
     # Relationships
     budget_entries = relationship("Budget", back_populates="created_by_user")
     owned_inventory = relationship("Inventory", foreign_keys="Inventory.owner_user_id", back_populates="owner_user")
+    activity_logs = relationship("UserActivityLog", back_populates="user")
+    achievements = relationship("UserAchievement", back_populates="user")
+    stats = relationship("UserStats", back_populates="user", uselist=False)
 
 class Budget(Base):
     __tablename__ = "budget"
@@ -153,4 +163,58 @@ class AccountLinkRequest(Base):
     # Отношения
     requester = relationship("User", foreign_keys=[user_id])
     target = relationship("User", foreign_keys=[target_user_id])
-    processor = relationship("User", foreign_keys=[processed_by]) 
+    processor = relationship("User", foreign_keys=[processed_by])
+
+# Новые модели для расширенной ролевой системы
+
+class UserActivityLog(Base):
+    """Лог активности пользователей"""
+    __tablename__ = "user_activity_log"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    action = Column(String(100), nullable=False, index=True)
+    details = Column(JSON, nullable=True)
+    ip_address = Column(String(45), nullable=True)  # IPv4/IPv6
+    user_agent = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Relationships
+    user = relationship("User", back_populates="activity_logs")
+
+class UserAchievement(Base):
+    """Достижения пользователей"""
+    __tablename__ = "user_achievements"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    achievement_type = Column(String(50), nullable=False, index=True)
+    achievement_name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    icon = Column(String(50), nullable=True)
+    badge_color = Column(String(20), nullable=True)
+    earned_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    progress = Column(Integer, default=100)
+    is_active = Column(Boolean, default=True)
+    
+    # Relationships
+    user = relationship("User", back_populates="achievements")
+
+class UserStats(Base):
+    """Статистика пользователей для дашборда"""
+    __tablename__ = "user_stats"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    total_contributions = Column(Float, default=0)
+    contributions_count = Column(Integer, default=0)
+    inventory_count = Column(Integer, default=0)
+    club_inventory_count = Column(Integer, default=0)
+    achievements_count = Column(Integer, default=0)
+    last_contribution_date = Column(Date, nullable=True)
+    last_inventory_date = Column(Date, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="stats") 

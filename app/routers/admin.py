@@ -7,6 +7,7 @@ from datetime import date, datetime
 from app.database import get_db
 from app.models.models import Budget, User, Inventory, VKWhitelist, AccountLinkRequest, BudgetType, InventoryItemType, InventoryMaterialType
 from app.auth import get_admin_user, get_password_hash
+from app.permissions import require_permission, check_user_permission, update_user_activity, get_role_display_name, get_role_description
 from app.vk_oauth import vk_oauth
 
 router = APIRouter()
@@ -129,13 +130,40 @@ async def admin_delete_budget(budget_id: int, admin_user: User = Depends(get_adm
     return RedirectResponse(url="/admin/budget", status_code=302)
 
 @router.get("/admin/users", response_class=HTMLResponse)
-async def admin_users(request: Request, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+@require_permission("manage_users")
+async def admin_users(
+    request: Request, 
+    admin_user: User = Depends(get_admin_user), 
+    db: Session = Depends(get_db),
+    success: str = Query(None),
+    error: str = Query(None)
+):
+    # Получаем пользователей с их статистикой
     users = db.query(User).order_by(User.created_at.desc()).all()
+    
+    # Получаем статистику для каждого пользователя
+    from app.models.models import UserStats
+    user_stats = {}
+    for user in users:
+        stats = db.query(UserStats).filter(UserStats.user_id == user.id).first()
+        user_stats[user.id] = stats
+    
+    # Получаем разрешения для отображения
+    from app.permissions import get_user_permissions
+    user_permissions = {}
+    for user in users:
+        user_permissions[user.id] = get_user_permissions(user)
+    
+    update_user_activity(admin_user, db, "viewed_users_management")
     
     return templates.TemplateResponse("admin/users.html", {
         "request": request,
         "user": admin_user,
-        "users": users
+        "users": users,
+        "user_stats": user_stats,
+        "user_permissions": user_permissions,
+        "success_message": success,
+        "error_message": error
     })
 
 @router.get("/admin/inventory", response_class=HTMLResponse)
@@ -192,6 +220,178 @@ async def admin_reset_password(
         success_message = "password_changed"
     
     return RedirectResponse(url=f"/admin/users?success={success_message}", status_code=302)
+
+@router.post("/admin/users/update-role")
+@require_permission("manage_users")
+async def update_user_role(
+    request: Request,
+    user_id: int = Form(...),
+    new_role: str = Form(...),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Обновляет роль пользователя"""
+    try:
+        # Проверяем, что роль валидна
+        valid_roles = ['guest', 'member', 'moderator', 'admin', 'superadmin']
+        if new_role not in valid_roles:
+            return RedirectResponse(url="/admin/users?error=invalid_role", status_code=302)
+        
+        # Находим пользователя
+        user_to_update = db.query(User).filter(User.id == user_id).first()
+        if not user_to_update:
+            return RedirectResponse(url="/admin/users?error=user_not_found", status_code=302)
+        
+        # Проверяем права на изменение роли
+        if admin_user.role != 'superadmin':
+            # Обычные админы не могут назначать роли admin и superadmin
+            if new_role in ['admin', 'superadmin']:
+                return RedirectResponse(url="/admin/users?error=insufficient_permissions", status_code=302)
+            
+            # Обычные админы не могут изменять роли других админов
+            if user_to_update.role in ['admin', 'superadmin']:
+                return RedirectResponse(url="/admin/users?error=cannot_modify_admin", status_code=302)
+        
+        # Суперадмины не могут понижать других суперадминов
+        if admin_user.role == 'superadmin' and user_to_update.role == 'superadmin' and new_role != 'superadmin':
+            return RedirectResponse(url="/admin/users?error=cannot_demote_superadmin", status_code=302)
+        
+        # Сохраняем старую роль для логирования
+        old_role = user_to_update.role
+        
+        # Обновляем роль
+        user_to_update.role = new_role
+        
+        # Обновляем поле is_admin для обратной совместимости
+        if new_role in ['admin', 'superadmin']:
+            user_to_update.is_admin = 1
+        else:
+            user_to_update.is_admin = 0
+        
+        # Обновляем разрешения в соответствии с новой ролью
+        from app.permissions import ROLE_PERMISSIONS
+        if new_role in ROLE_PERMISSIONS:
+            user_to_update.permissions = ROLE_PERMISSIONS[new_role]
+        
+        db.commit()
+        
+        # Логируем изменение
+        update_user_activity(admin_user, db, "updated_user_role", {
+            "target_user_id": user_id,
+            "target_username": user_to_update.username,
+            "old_role": old_role,
+            "new_role": new_role
+        })
+        
+        return RedirectResponse(
+            url=f"/admin/users?success=role_updated&user={user_to_update.username}&old_role={old_role}&new_role={new_role}", 
+            status_code=302
+        )
+        
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(url=f"/admin/users?error=update_failed&message={str(e)}", status_code=302)
+
+@router.post("/admin/users/update-permissions")
+@require_permission("manage_users")
+async def update_user_permissions(
+    request: Request,
+    user_id: int = Form(...),
+    permissions: str = Form(...),  # JSON строка с разрешениями
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Обновляет индивидуальные разрешения пользователя"""
+    try:
+        import json
+        
+        # Находим пользователя
+        user_to_update = db.query(User).filter(User.id == user_id).first()
+        if not user_to_update:
+            return RedirectResponse(url="/admin/users?error=user_not_found", status_code=302)
+        
+        # Проверяем права на изменение разрешений
+        if admin_user.role != 'superadmin':
+            # Обычные админы не могут изменять разрешения админов
+            if user_to_update.role in ['admin', 'superadmin']:
+                return RedirectResponse(url="/admin/users?error=cannot_modify_admin_permissions", status_code=302)
+        
+        # Парсим JSON с разрешениями
+        try:
+            permissions_dict = json.loads(permissions)
+        except json.JSONDecodeError:
+            return RedirectResponse(url="/admin/users?error=invalid_permissions_format", status_code=302)
+        
+        # Обновляем разрешения
+        user_to_update.permissions = permissions_dict
+        db.commit()
+        
+        # Логируем изменение
+        update_user_activity(admin_user, db, "updated_user_permissions", {
+            "target_user_id": user_id,
+            "target_username": user_to_update.username,
+            "permissions": permissions_dict
+        })
+        
+        return RedirectResponse(
+            url=f"/admin/users?success=permissions_updated&user={user_to_update.username}", 
+            status_code=302
+        )
+        
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(url=f"/admin/users?error=permissions_update_failed&message={str(e)}", status_code=302)
+
+@router.post("/admin/users/deactivate")
+@require_permission("manage_users")
+async def deactivate_user(
+    request: Request,
+    user_id: int = Form(...),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Деактивирует пользователя (устанавливает роль guest)"""
+    try:
+        # Находим пользователя
+        user_to_update = db.query(User).filter(User.id == user_id).first()
+        if not user_to_update:
+            return RedirectResponse(url="/admin/users?error=user_not_found", status_code=302)
+        
+        # Проверяем права на деактивацию
+        if admin_user.role != 'superadmin':
+            # Обычные админы не могут деактивировать админов
+            if user_to_update.role in ['admin', 'superadmin']:
+                return RedirectResponse(url="/admin/users?error=cannot_deactivate_admin", status_code=302)
+        
+        # Нельзя деактивировать самого себя
+        if user_to_update.id == admin_user.id:
+            return RedirectResponse(url="/admin/users?error=cannot_deactivate_self", status_code=302)
+        
+        # Сохраняем старую роль для логирования
+        old_role = user_to_update.role
+        
+        # Деактивируем пользователя
+        user_to_update.role = 'guest'
+        user_to_update.is_admin = 0
+        user_to_update.permissions = {}
+        
+        db.commit()
+        
+        # Логируем изменение
+        update_user_activity(admin_user, db, "deactivated_user", {
+            "target_user_id": user_id,
+            "target_username": user_to_update.username,
+            "old_role": old_role
+        })
+        
+        return RedirectResponse(
+            url=f"/admin/users?success=user_deactivated&user={user_to_update.username}", 
+            status_code=302
+        )
+        
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(url=f"/admin/users?error=deactivation_failed&message={str(e)}", status_code=302)
 
 # Новый роут для синхронизации данных VK пользователей
 @router.post("/admin/sync-vk-users")
