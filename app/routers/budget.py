@@ -41,6 +41,59 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_u
     expenses_sum = sum([b.price for b in total_expenses]) if total_expenses else 0
     balance = income_sum + expenses_sum
     
+    # Получаем статистику пользователя
+    from app.models.models import UserStats, UserActivityLog, UserAchievement, Inventory
+    
+    # Получаем или создаем статистику пользователя
+    user_stats = db.query(UserStats).filter(UserStats.user_id == current_user.id).first()
+    if not user_stats:
+        # Создаем новую статистику
+        user_stats = UserStats(user_id=current_user.id)
+        db.add(user_stats)
+        db.commit()
+        db.refresh(user_stats)
+    
+    # Обновляем статистику пользователя
+    user_contributions = db.query(Budget).filter(
+        Budget.created_by_user_id == current_user.id,
+        Budget.is_approved == True
+    ).all()
+    
+    user_stats.total_contributions = sum([c.price for c in user_contributions if c.price > 0])
+    user_stats.contributions_count = len(user_contributions)
+    user_stats.inventory_count = db.query(Inventory).filter(Inventory.owner_user_id == current_user.id).count()
+    user_stats.club_inventory_count = db.query(Inventory).filter(Inventory.is_club_item == True).count()
+    user_stats.achievements_count = db.query(UserAchievement).filter(
+        UserAchievement.user_id == current_user.id,
+        UserAchievement.is_active == True
+    ).count()
+    
+    # Обновляем даты последней активности
+    last_contribution = db.query(Budget).filter(
+        Budget.created_by_user_id == current_user.id,
+        Budget.is_approved == True
+    ).order_by(Budget.data.desc()).first()
+    
+    if last_contribution:
+        user_stats.last_contribution_date = last_contribution.data
+    
+    last_inventory = db.query(Inventory).filter(Inventory.owner_user_id == current_user.id).order_by(Inventory.created_at.desc()).first()
+    if last_inventory:
+        user_stats.last_inventory_date = last_inventory.created_at.date()
+    
+    db.commit()
+    
+    # Получаем последние достижения
+    achievements = db.query(UserAchievement).filter(
+        UserAchievement.user_id == current_user.id,
+        UserAchievement.is_active == True
+    ).order_by(UserAchievement.earned_at.desc()).limit(5).all()
+    
+    # Получаем последнюю активность
+    recent_activity = db.query(UserActivityLog).filter(
+        UserActivityLog.user_id == current_user.id
+    ).order_by(UserActivityLog.created_at.desc()).limit(5).all()
+    
     # Если пользователь админ, показываем количество ожидающих модерации
     pending_count = 0
     if current_user.is_admin == 1:
@@ -49,6 +102,9 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_u
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "user": current_user,
+        "user_stats": user_stats,
+        "achievements": achievements,
+        "recent_activity": recent_activity,
         "recent_contributions": recent_contributions,
         "income_sum": income_sum,
         "expenses_sum": abs(expenses_sum),
