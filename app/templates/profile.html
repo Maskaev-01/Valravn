@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Профиль - {{ user.username }}{% endblock %}
+{% block title %}Профиль {{ user.username }} - Valravn{% endblock %}
+
+{% block seo_meta %}
+<meta name="description" content="Профиль участника {{ user.username }} клуба Valravn. Взносы, инвентарь, достижения и активность."/>
+<meta name="keywords" content="Valravn, профиль, {{ user.username }}, участник, клуб, историческая реконструкция, инвентарь, взносы"/>
+{% endblock %}
+
+{% block og_meta %}
+<meta property="og:title" content="Профиль {{ user.username }} — Valravn"/>
+<meta property="og:description" content="Информация о профиле участника {{ user.username }} клуба Valravn."/>
+<meta property="og:type" content="profile"/>
+<meta property="og:url" content="https://valravn-budget.onrender.com/profile"/>
+<meta property="og:image" content="https://valravn-budget.onrender.com/static/images/og.png"/>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">

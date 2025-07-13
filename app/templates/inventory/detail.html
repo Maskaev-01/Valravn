@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}{{ item.item_name }} - Инвентарь{% endblock %}
+{% block title %}{{ item.item_name }} - Инвентарь Valravn{% endblock %}
+
+{% block seo_meta %}
+<meta name="description" content="{{ item.item_name }} — предмет из коллекции клуба Valravn. Материал: {{ item.material }}, владелец: {{ item.owner }}. Историческая реконструкция."/>
+<meta name="keywords" content="Valravn, инвентарь, {{ item.item_name }}, {{ item.material }}, {{ item.owner }}, историческая реконструкция, предмет"/>
+{% endblock %}
+
+{% block og_meta %}
+<meta property="og:title" content="{{ item.item_name }} — Инвентарь Valravn"/>
+<meta property="og:description" content="Подробная информация о предмете {{ item.item_name }} из коллекции клуба Valravn."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://valravn-budget.onrender.com/inventory/{{ item.id }}"/>
+{% if item.image_data or item.image_path %}
+<meta property="og:image" content="{{ item.image_path if item.image_path else '/static/images/og.png' }}"/>
+{% else %}
+<meta property="og:image" content="/static/images/og.png"/>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8">

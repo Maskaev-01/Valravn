@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Инвентарь - Valravn{% endblock %}
+{% block title %}Инвентарь клуба - Valravn{% endblock %}
+
+{% block seo_meta %}
+<meta name="description" content="Список инвентаря клуба Valravn: предметы, владельцы, материалы, история. Просмотр и поиск по коллекции."/>
+<meta name="keywords" content="Valravn, инвентарь, предметы, клуб, историческая реконструкция, коллекция, поиск"/>
+{% endblock %}
+
+{% block og_meta %}
+<meta property="og:title" content="Инвентарь клуба Valravn"/>
+<meta property="og:description" content="Просматривайте и ищите предметы инвентаря клуба Valravn."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://valravn-budget.onrender.com/inventory"/>
+<meta property="og:image" content="https://valravn-budget.onrender.com/static/images/og.png"/>
+{% endblock %}
 
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8">

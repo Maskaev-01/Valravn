@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Отчеты - Valravn{% endblock %}
+{% block title %}Отчеты по бюджету - Valravn{% endblock %}
+
+{% block seo_meta %}
+<meta name="description" content="Финансовые отчеты клуба Valravn: доходы, расходы, взносы, аналитика. Просмотр и анализ бюджета клуба."/>
+<meta name="keywords" content="Valravn, отчеты, бюджет, финансы, аналитика, клуб, историческая реконструкция"/>
+{% endblock %}
+
+{% block og_meta %}
+<meta property="og:title" content="Отчеты по бюджету Valravn"/>
+<meta property="og:description" content="Анализируйте доходы, расходы и взносы клуба Valravn."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://valravn-budget.onrender.com/reports"/>
+<meta property="og:image" content="https://valravn-budget.onrender.com/static/images/og.png"/>
+{% endblock %}
 
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8">

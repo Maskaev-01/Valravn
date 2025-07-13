@@ -11,6 +11,8 @@ from app.models import models
 from app.routers import auth, budget, admin, inventory
 from app.auth import get_current_user_from_cookie
 from sqlalchemy import text
+from fastapi.exception_handlers import http_exception_handler
+from starlette.requests import Request as StarletteRequest
 
 # Создаем таблицы
 models.Base.metadata.create_all(bind=engine)
@@ -112,6 +114,14 @@ async def test_routes():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: StarletteRequest, exc: HTTPException):
+    if exc.status_code == 401:
+        # Редиректим на страницу логина для неавторизованных
+        return RedirectResponse(url="/auth/login", status_code=302)
+    # Для остальных ошибок используем стандартный обработчик
+    return await http_exception_handler(request, exc)
 
 if __name__ == "__main__":
     import uvicorn

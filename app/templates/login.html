@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Вход - Valravn{% endblock %}
+{% block title %}Вход в систему - Valravn{% endblock %}
+
+{% block seo_meta %}
+<meta name="description" content="Вход в систему управления клубом Valravn. Авторизация для участников и администраторов."/>
+<meta name="keywords" content="Valravn, вход, авторизация, клуб, историческая реконструкция, система управления"/>
+{% endblock %}
+
+{% block og_meta %}
+<meta property="og:title" content="Вход в Valravn"/>
+<meta property="og:description" content="Авторизация для доступа к системе управления клубом Valravn."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://valravn-budget.onrender.com/login"/>
+<meta property="og:image" content="https://valravn-budget.onrender.com/static/images/og.png"/>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-md w-full space-y-8 px-4 sm:px-6 lg:px-8">
