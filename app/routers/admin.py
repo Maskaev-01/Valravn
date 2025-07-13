@@ -252,7 +252,6 @@ async def admin_reset_password(
     return RedirectResponse(url=f"/admin/users?success={success_message}", status_code=302)
 
 @router.post("/admin/users/update-role")
-@require_permission("manage_users")
 async def update_user_role(
     request: Request,
     user_id: int = Form(...),
@@ -261,6 +260,11 @@ async def update_user_role(
     db: Session = Depends(get_db)
 ):
     """Обновляет роль пользователя"""
+    # Проверяем разрешение на управление пользователями
+    from app.permissions import check_user_permission
+    if not check_user_permission(admin_user, "manage_users"):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для управления пользователями")
+    
     try:
         # Проверяем, что роль валидна
         valid_roles = ['guest', 'member', 'moderator', 'admin', 'superadmin']
@@ -323,7 +327,6 @@ async def update_user_role(
         return RedirectResponse(url=f"/admin/users?error=update_failed&message={str(e)}", status_code=302)
 
 @router.post("/admin/users/update-permissions")
-@require_permission("manage_users")
 async def update_user_permissions(
     request: Request,
     user_id: int = Form(...),
@@ -332,6 +335,11 @@ async def update_user_permissions(
     db: Session = Depends(get_db)
 ):
     """Обновляет индивидуальные разрешения пользователя"""
+    # Проверяем разрешение на управление пользователями
+    from app.permissions import check_user_permission
+    if not check_user_permission(admin_user, "manage_users"):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для управления пользователями")
+    
     try:
         import json
         
@@ -373,7 +381,6 @@ async def update_user_permissions(
         return RedirectResponse(url=f"/admin/users?error=permissions_update_failed&message={str(e)}", status_code=302)
 
 @router.post("/admin/users/deactivate")
-@require_permission("manage_users")
 async def deactivate_user(
     request: Request,
     user_id: int = Form(...),
@@ -381,6 +388,11 @@ async def deactivate_user(
     db: Session = Depends(get_db)
 ):
     """Деактивирует пользователя (устанавливает роль guest)"""
+    # Проверяем разрешение на управление пользователями
+    from app.permissions import check_user_permission
+    if not check_user_permission(admin_user, "manage_users"):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для управления пользователями")
+    
     try:
         # Находим пользователя
         user_to_update = db.query(User).filter(User.id == user_id).first()
